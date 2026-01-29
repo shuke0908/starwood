@@ -225,8 +225,24 @@
     scrollTop = (e.target as HTMLDivElement).scrollTop;
   }
 
-  // Grade Promotion Logic
+  // --- Smart Promotion & Mix-up Logic ---
   let isPromotionModalOpen = $state(false);
+  let promotionStep = $state<"config" | "preview">("config");
+
+  // 가상의 진급 데이터 (미리보기용)
+  let promotionWorkspace = $state<
+    {
+      id: string;
+      name: string;
+      currentGrade: string;
+      nextGrade: string;
+      currentClasses: string[];
+      targetClassId: string | null;
+      fee: number;
+      isSelected: boolean;
+    }[]
+  >([]);
+
   const promotionMapping = $derived.by(() => {
     const grades = settings.data.academy.gradeSystem;
     const mapping: Record<string, string> = {};
@@ -238,33 +254,89 @@
   });
 
   function openPromotion() {
+    // 진급 데이터 초기화
+    promotionWorkspace = settings.data.students
+      .filter((s) => s.status !== "퇴원")
+      .map((s) => {
+        const next = promotionMapping[s.grade] || s.grade;
+        return {
+          id: s.id,
+          name: s.name,
+          currentGrade: s.grade,
+          nextGrade: next,
+          currentClasses: s.classes,
+          targetClassId: null, // 초기값은 선택 안됨
+          fee: 0,
+          isSelected: true,
+        };
+      });
+    promotionStep = "config";
     isPromotionModalOpen = true;
   }
 
-  function executePromotion() {
+  function handleClassChange(studentId: string, classId: string) {
+    const student = promotionWorkspace.find((s) => s.id === studentId);
+    if (student) {
+      const cls = settings.data.classes.find((c) => c.id === classId);
+      student.targetClassId = classId;
+      student.fee = cls?.fee || 0;
+    }
+  }
+
+  function applySmartPromotion() {
+    const targets = promotionWorkspace.filter((s) => s.isSelected);
+    if (targets.length === 0) {
+      toast.show("선택된 학생이 없습니다.", "warning");
+      return;
+    }
+
     if (
       !confirm(
-        '정말로 모든 원생의 학년을 일괄 상향하시겠습니까? "졸업/퇴원" 대상은 상태가 변경됩니다.',
+        `${targets.length}명의 진급 및 반 배정을 확정하시겠습니까? 수강료 청구서가 자동 갱신됩니다.`,
       )
     )
       return;
 
-    settings.data.students = settings.data.students.map((s) => {
-      const nextGrade = promotionMapping[s.grade];
-      if (!nextGrade) return s;
+    targets.forEach((t) => {
+      const student = settings.data.students.find((s) => s.id === t.id);
+      if (student) {
+        // 1. 학급 및 상태 변경
+        if (t.nextGrade === "졸업/퇴원") {
+          student.status = "퇴원";
+          student.memo =
+            (student.memo ? student.memo + " | " : "") +
+            "일괄 진급으로 인한 자동 졸업";
+        } else {
+          student.grade = t.nextGrade;
 
-      if (nextGrade === "졸업/퇴원") {
-        return {
-          ...s,
-          status: "퇴원",
-          memo: (s.memo ? s.memo + " | " : "") + "학급 진급으로 인한 자동 졸업",
-        };
+          // 2. 반 배정 변경
+          if (t.targetClassId) {
+            const newCls = settings.data.classes.find(
+              (c) => c.id === t.targetClassId,
+            );
+            if (newCls) {
+              student.classes = [newCls.name];
+              // 3. 수강료 청구 (초안 생성)
+              settings.data.payments.unshift({
+                id: `pay_${Date.now()}_${student.id}`,
+                studentId: student.id,
+                amount: newCls.fee,
+                date: new Date().toISOString().slice(0, 10),
+                description: `${t.nextGrade} 진급 정규 수강료 (${newCls.name})`,
+                type: "이체",
+                status: "pending",
+              });
+            }
+          }
+        }
       }
-      return { ...s, grade: nextGrade };
     });
 
+    toast.show(
+      `${targets.length}명의 스마트 진급 처리가 완료되었습니다.`,
+      "success",
+    );
     isPromotionModalOpen = false;
-    alert("모든 원생의 학년이 성공적으로 일괄 상향되었습니다.");
   }
 </script>
 
@@ -1487,188 +1559,258 @@
   title="학년 체계 및 일괄 진급 관리"
   width="1100px"
 >
-  <div class="p-10 space-y-10 h-full overflow-y-auto custom-scroll pb-32">
-    <!-- 1. Grade System Config -->
-    <section class="space-y-6">
-      <div class="flex justify-between items-end px-1">
-        <div class="space-y-1.5">
-          <h4
-            class="text-[15px] font-black text-toss-grey-600 border-l-4 border-toss-blue pl-4"
-          >
-            학년 체계 커스텀 설정
-          </h4>
-          <p class="text-[13px] font-bold text-toss-grey-300 ml-5">
-            학급 운영 방식에 맞게 학년 리스트를 자유롭게 구성하세요.
-          </p>
-        </div>
-        <div class="flex gap-2">
-          <button
-            class="px-4 py-2 bg-toss-grey-50 rounded-xl text-[12px] font-black text-toss-grey-400 hover:bg-toss-blue/5 hover:text-toss-blue transition-all border border-transparent hover:border-toss-blue/10"
-            >초중고 기본형</button
-          >
-          <button
-            class="px-4 py-2 bg-toss-grey-50 rounded-xl text-[12px] font-black text-toss-grey-400 hover:bg-toss-blue/5 hover:text-toss-blue transition-all border border-transparent hover:border-toss-blue/10"
-            >N수/고시형</button
-          >
-          <button
-            class="px-4 py-2 bg-toss-grey-50 rounded-xl text-[12px] font-black text-toss-grey-400 hover:bg-toss-blue/5 hover:text-toss-blue transition-all border border-transparent hover:border-toss-blue/10"
-            >취업/자격증형</button
-          >
-        </div>
+  <div class="px-12 py-10 space-y-12 pb-40">
+    <!-- Header with Steps -->
+    <header class="flex justify-between items-center">
+      <div class="space-y-1">
+        <h2 class="text-[32px] font-black text-toss-grey-800 tracking-tight">
+          스마트 진급 가이드 🚀
+        </h2>
+        <p class="text-[16px] font-bold text-toss-grey-500">
+          학년 상향 및 반 배정을 직관적으로 관리하세요.
+        </p>
       </div>
-      <div class="relative group">
-        <textarea
-          value={settings.data.academy.gradeSystem.join(", ")}
-          oninput={(e) => {
-            settings.data.academy.gradeSystem = (
-              e.target as HTMLTextAreaElement
-            ).value
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean);
-          }}
-          class="w-full h-32 p-7 rounded-[32px] bg-toss-grey-25 border border-toss-grey-50 font-bold text-[17px] text-toss-grey-600 focus:bg-white focus:border-toss-blue focus:ring-8 focus:ring-toss-blue/5 outline-none transition-all resize-none shadow-inner leading-relaxed"
-          placeholder="초1, 초2, 초3..."
-        ></textarea>
+      <div
+        class="flex p-1.5 bg-toss-grey-50 rounded-[24px] border border-toss-grey-100 shadow-inner"
+      >
+        <button
+          onclick={() => (promotionStep = "config")}
+          class="px-8 py-3 rounded-2xl text-[14px] font-black transition-all {promotionStep ===
+          'config'
+            ? 'bg-white shadow-md text-toss-blue'
+            : 'text-toss-grey-400'}">1. 체계 설정</button
+        >
+        <button
+          onclick={() => (promotionStep = "preview")}
+          class="px-8 py-3 rounded-2xl text-[14px] font-black transition-all {promotionStep ===
+          'preview'
+            ? 'bg-white shadow-md text-toss-blue'
+            : 'text-toss-grey-400'}">2. 대상 및 반 배정</button
+        >
+      </div>
+    </header>
+
+    {#if promotionStep === "config"}
+      <!-- Config Section -->
+      <section class="space-y-8" in:fade>
+        <div class="flex justify-between items-end">
+          <div class="space-y-4">
+            <h4
+              class="text-[18px] font-black text-toss-grey-800 flex items-center gap-2"
+            >
+              <Settings size={20} class="text-toss-blue" /> 학원 학년 체계 정의
+            </h4>
+            <p class="text-[14px] font-bold text-toss-grey-500 ml-7">
+              콤마(,)로 구분하여 낮은 학년부터 순서대로 입력하세요. 마지막
+              단계는 졸업 처리됩니다.
+            </p>
+          </div>
+        </div>
+
+        <div class="relative">
+          <textarea
+            value={settings.data.academy.gradeSystem.join(", ")}
+            oninput={(e) => {
+              settings.data.academy.gradeSystem = (
+                e.target as HTMLTextAreaElement
+              ).value
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean);
+            }}
+            class="w-full h-40 p-8 rounded-[40px] bg-toss-grey-50 border-2 border-transparent focus:border-toss-blue focus:bg-white font-black text-[19px] text-toss-grey-700 outline-none transition-all shadow-inner leading-relaxed"
+            placeholder="초1, 초2, 초3..."
+          ></textarea>
+        </div>
+
         <div
-          class="absolute right-8 bottom-6 px-4 py-1.5 bg-white rounded-full border border-toss-grey-50 text-[12px] font-black text-toss-blue shadow-sm"
+          class="bg-white border border-toss-grey-100 rounded-[40px] overflow-hidden shadow-sm"
         >
-          총 {settings.data.academy.gradeSystem.length}단계 구성됨
-        </div>
-      </div>
-    </section>
-
-    <!-- 2. Promotion Preview (Premium Table) -->
-    <section class="space-y-6">
-      <h4
-        class="text-[15px] font-black text-toss-grey-600 border-l-4 border-toss-blue pl-4"
-      >
-        진급 프로세스 매핑 분석
-      </h4>
-      <div
-        class="bg-white border border-toss-grey-50 rounded-[40px] overflow-hidden shadow-sm"
-      >
-        <table class="w-full text-left border-collapse">
-          <thead class="bg-toss-grey-25 border-b border-toss-grey-50">
-            <tr class="text-[13px] font-black text-toss-grey-400">
-              <th class="w-[80px] p-6 text-center">순서</th>
-              <th class="p-6 pl-10">현재 학년 학급</th>
-              <th class="w-[100px] text-center"></th>
-              <th class="p-6 pl-10">진급 후 적용 학년</th>
-              <th class="p-6 text-right pr-12">자동 처리 구분</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-toss-grey-50/50">
-            {#each Object.entries(promotionMapping) as [curr, next], i}
-              <tr class="hover:bg-toss-blue-light/10 transition-colors group">
-                <td class="p-6 text-center">
-                  <span
-                    class="w-8 h-8 inline-flex items-center justify-center rounded-xl bg-toss-grey-50 text-[12px] font-black text-toss-grey-300 group-hover:bg-toss-blue group-hover:text-white transition-all"
-                  >
-                    {i + 1}
-                  </span>
-                </td>
-                <td class="p-6 pl-10">
-                  <div class="flex items-center gap-4">
-                    <div
-                      class="w-10 h-10 rounded-2xl bg-toss-grey-50 flex items-center justify-center text-[15px] font-black text-toss-grey-400 group-hover:bg-white transition-all shadow-sm"
-                    >
-                      {curr[0]}
-                    </div>
-                    <span class="text-[17px] font-black text-toss-grey-600"
-                      >{curr}</span
-                    >
-                  </div>
-                </td>
-                <td class="text-center">
-                  <div class="flex items-center justify-center">
-                    <div
-                      class="w-10 h-[1px] bg-toss-grey-100 group-hover:bg-toss-blue/30 transition-all"
-                    ></div>
-                    <ChevronRight
-                      size={16}
-                      class="text-toss-grey-200 group-hover:text-toss-blue transition-all"
-                    />
-                    <div
-                      class="w-10 h-[1px] bg-toss-grey-100 group-hover:bg-toss-blue/30 transition-all"
-                    ></div>
-                  </div>
-                </td>
-                <td class="p-6 pl-10">
-                  <div class="flex items-center gap-3">
-                    <span
-                      class="text-[18px] font-black {next === '졸업/퇴원'
-                        ? 'text-red-500'
-                        : 'text-toss-blue'}"
-                    >
-                      {next}
-                    </span>
-                    {#if next !== "졸업/퇴원"}
-                      <span class="text-[12px] font-bold text-toss-blue/30"
-                        >Target</span
-                      >
-                    {/if}
-                  </div>
-                </td>
-                <td class="p-6 text-right pr-12">
-                  {#if next === "졸업/퇴원"}
-                    <div
-                      class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-red-50 text-[12px] font-black text-red-500 border border-red-100"
-                    >
-                      <span
-                        class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"
-                      ></span>
-                      자동 퇴원 처리
-                    </div>
-                  {:else}
-                    <div
-                      class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-toss-blue-light/30 text-[12px] font-black text-toss-blue border border-toss-blue/10"
-                    >
-                      <TrendingUp size={12} />
-                      일괄 진급 상향
-                    </div>
-                  {/if}
-                </td>
+          <table class="w-full text-left">
+            <thead class="bg-toss-grey-50 border-b border-toss-grey-100">
+              <tr class="text-[12px] font-black text-toss-grey-400">
+                <th class="p-6 text-center">순서</th>
+                <th class="p-6 pl-10">현재 학년</th>
+                <th class="p-6 text-center"></th>
+                <th class="p-6">진급 후 대상</th>
               </tr>
-            {/each}
-          </tbody>
-        </table>
-      </div>
-    </section>
+            </thead>
+            <tbody class="divide-y divide-toss-grey-50">
+              {#each Object.entries(promotionMapping) as [curr, next], i}
+                <tr class="hover:bg-toss-grey-50/50 transition-all">
+                  <td class="p-6 text-center">
+                    <span
+                      class="w-8 h-8 inline-flex items-center justify-center rounded-xl bg-toss-grey-100 text-[12px] font-black text-toss-grey-500"
+                      >{i + 1}</span
+                    >
+                  </td>
+                  <td
+                    class="p-6 pl-10 text-[17px] font-black text-toss-grey-700"
+                    >{curr}</td
+                  >
+                  <td class="text-center"
+                    ><ChevronRight
+                      size={18}
+                      class="text-toss-grey-200 inline"
+                    /></td
+                  >
+                  <td
+                    class="p-6 text-[17px] font-black {next === '졸업/퇴원'
+                      ? 'text-red-500'
+                      : 'text-toss-blue'}">{next}</td
+                  >
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
 
-    <div
-      class="p-8 bg-toss-blue-light/15 rounded-[40px] border border-toss-blue/5 flex gap-6 items-start"
-    >
-      <div
-        class="w-14 h-14 rounded-3xl bg-white flex items-center justify-center shadow-md shadow-toss-blue/5 shrink-0"
-      >
-        <Clock size={28} class="text-toss-blue" />
-      </div>
-      <div class="space-y-2">
-        <p class="text-[16px] font-black text-toss-blue">
-          일괄 진급 작업 시 주의사항
-        </p>
-        <p
-          class="text-[14px] font-medium text-toss-grey-500 leading-relaxed max-w-[800px]"
+        <div class="flex justify-end pt-10">
+          <button
+            onclick={() => (promotionStep = "preview")}
+            class="toss-btn-primary px-12 h-20 rounded-[32px] font-black text-[18px] flex items-center gap-4 shadow-xl shadow-toss-blue/20"
+          >
+            다음 단계: 원생별 반 배정하기 <ChevronRight size={24} />
+          </button>
+        </div>
+      </section>
+    {:else}
+      <!-- Preview & Assign Section -->
+      <section class="space-y-10" in:fade>
+        <div
+          class="flex justify-between items-center bg-white p-8 rounded-[40px] border border-toss-grey-100 shadow-sm"
         >
-          진급 실행 시 현재 시스템에 등록된 <b>모든 원생</b>의 학년이 한 단계씩
-          상향됩니다. <br />
-          매핑의 마지막 단계인 '졸업/퇴원' 대상자는 상태가 '퇴원'으로 자동 변경되며,
-          원생 메모에 진급 기록이 남습니다. 이 작업은 대규모 데이터 변경을 수반하므로
-          실행 전 매핑 테이블을 반드시 확인해 주세요.
-        </p>
-      </div>
-    </div>
+          <div class="space-y-2">
+            <h4 class="text-[20px] font-black text-toss-grey-800">
+              진급 대상 원생 검토 ({promotionWorkspace.length}명)
+            </h4>
+            <p class="text-[14px] font-bold text-toss-grey-500">
+              각 학생이 이동할 새로운 반을 선택하세요. 수강료가 자동 연동됩니다.
+            </p>
+          </div>
+          <div class="flex gap-4">
+            <button
+              onclick={() => (promotionStep = "config")}
+              class="px-6 h-14 bg-toss-grey-100 rounded-2xl font-black text-toss-grey-600 hover:bg-toss-grey-200 transition-all"
+              >설정으로 돌아가기</button
+            >
+          </div>
+        </div>
 
-    <div
-      class="fixed bottom-10 right-10 left-[calc(100vw-1100px+40px)] flex justify-end"
-    >
-      <button
-        onclick={executePromotion}
-        class="w-[400px] h-20 bg-toss-blue text-white rounded-[32px] font-black text-[20px] shadow-2xl shadow-toss-blue/30 hover:bg-toss-blue-dark hover:scale-[1.02] hover:-translate-y-1 transition-all active:scale-95 flex items-center justify-center gap-4"
-      >
-        <TrendingUp size={24} class="stroke-[3]" /> 지금 일괄 진급 실행하기
-      </button>
-    </div>
+        <div class="space-y-6">
+          {#each settings.data.academy.gradeSystem as grade}
+            {@const gradeStudents = promotionWorkspace.filter(
+              (s) => s.currentGrade === grade,
+            )}
+            {#if gradeStudents.length > 0}
+              <div class="space-y-4">
+                <h5
+                  class="text-[16px] font-black text-toss-blue pl-4 border-l-4 border-toss-blue"
+                >
+                  {grade} 대상자
+                  <span class="text-toss-grey-400 font-bold ml-2"
+                    >({gradeStudents.length}명)</span
+                  >
+                </h5>
+                <div
+                  class="bg-white border border-toss-grey-100 rounded-[32px] overflow-hidden shadow-sm"
+                >
+                  <table class="w-full text-left">
+                    <thead class="bg-toss-grey-25 border-b border-toss-grey-50">
+                      <tr
+                        class="text-[11px] font-black text-toss-grey-400 uppercase tracking-widest"
+                      >
+                        <th class="w-[60px] p-5 text-center">선택</th>
+                        <th class="p-5 pl-8">이름</th>
+                        <th class="p-5 w-[140px]">기존 학년</th>
+                        <th class="p-5 w-[140px]">진급 학년</th>
+                        <th class="p-5">배정 될 반 (이동)</th>
+                        <th class="p-5 text-right pr-10">예상 수강료</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-toss-grey-50">
+                      {#each gradeStudents as s (s.id)}
+                        <tr
+                          class="hover:bg-toss-grey-50/50 transition-all {s.nextGrade ===
+                          '졸업/퇴원'
+                            ? 'opacity-60 bg-red-50/10'
+                            : ''}"
+                        >
+                          <td class="p-5 text-center">
+                            <input
+                              type="checkbox"
+                              bind:checked={s.isSelected}
+                              class="w-5 h-5 rounded-md border-toss-grey-200 text-toss-blue focus:ring-toss-blue/20"
+                            />
+                          </td>
+                          <td class="p-5 pl-8 font-black text-toss-grey-700"
+                            >{s.name}</td
+                          >
+                          <td
+                            class="p-5 text-[14px] font-bold text-toss-grey-400"
+                            >{s.currentGrade}</td
+                          >
+                          <td
+                            class="p-5 text-[14px] font-black {s.nextGrade ===
+                            '졸업/퇴원'
+                              ? 'text-red-500'
+                              : 'text-toss-blue'}"
+                          >
+                            {s.nextGrade}
+                          </td>
+                          <td class="p-5">
+                            {#if s.nextGrade !== "졸업/퇴원"}
+                              <select
+                                onchange={(e) =>
+                                  handleClassChange(
+                                    s.id,
+                                    (e.target as HTMLSelectElement).value,
+                                  )}
+                                class="w-full h-12 px-4 rounded-xl bg-toss-grey-50 border border-toss-grey-100 text-[13px] font-black text-toss-grey-600 focus:bg-white focus:border-toss-blue outline-none transition-all cursor-pointer"
+                              >
+                                <option value="">반을 선택하세요..</option>
+                                {#each settings.data.classes as cls}
+                                  <option value={cls.id}
+                                    >{cls.name} (定 {cls.fee.toLocaleString()}원)</option
+                                  >
+                                {/each}
+                              </select>
+                            {:else}
+                              <span class="text-[12px] font-bold text-red-400"
+                                >자동 졸업 (반 배정 제외)</span
+                              >
+                            {/if}
+                          </td>
+                          <td
+                            class="p-5 text-right pr-10 font-black text-toss-grey-700"
+                          >
+                            {s.fee > 0 ? `₩${s.fee.toLocaleString()}` : "-"}
+                          </td>
+                        </tr>
+                      {/each}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            {/if}
+          {/each}
+        </div>
+
+        <div class="fixed bottom-10 right-10 flex gap-4">
+          <button
+            class="px-10 h-20 bg-white border border-toss-grey-200 rounded-[32px] font-black text-[18px] text-toss-grey-500 shadow-xl hover:bg-toss-grey-50 transition-all"
+            onclick={() => (isPromotionModalOpen = false)}>취소</button
+          >
+          <button
+            onclick={applySmartPromotion}
+            class="px-16 h-20 bg-toss-blue text-white rounded-[32px] font-black text-[20px] shadow-2xl shadow-toss-blue/30 hover:scale-[1.05] transition-all flex items-center gap-4 animate-bounce-subtle"
+          >
+            <TrendingUp size={24} strokeWidth={3} />
+            {promotionWorkspace.filter((s) => s.isSelected).length}명 진급 확정
+            및 수강료 청구
+          </button>
+        </div>
+      </section>
+    {/if}
   </div>
 </Drawer>
