@@ -1,0 +1,764 @@
+
+> starwood@0.0.1 check
+> svelte-kit sync && svelte-check --tsconfig ./tsconfig.json
+
+Loading svelte-check in workspace: /home/shu/starwood
+Getting Svelte diagnostics...
+
+/home/shu/starwood/src/routes/+layout.svelte:334:25
+Warn: Avoid using autofocus
+https://svelte.dev/e/a11y_autofocus (svelte)
+                        class="flex-1 bg-transparent border-none outline-none text-[18px] font-bold text-toss-grey-600 placeholder:text-toss-grey-300"
+                        autofocus
+                    />
+
+/home/shu/starwood/src/routes/+layout.svelte:148:20
+Error: Cannot find name 'allMenuItems'. (ts)
+            : [
+                ...allMenuItems.filter(i => i.name.includes(spotlightSearchTrigger)).map(i => ({ ...i, type: 'menu' as const })),
+                ...settings.data.students.filter(s =>
+
+/home/shu/starwood/src/routes/+layout.svelte:148:40
+Error: Parameter 'i' implicitly has an 'any' type. (ts)
+            : [
+                ...allMenuItems.filter(i => i.name.includes(spotlightSearchTrigger)).map(i => ({ ...i, type: 'menu' as const })),
+                ...settings.data.students.filter(s =>
+
+/home/shu/starwood/src/routes/+layout.svelte:148:90
+Error: Parameter 'i' implicitly has an 'any' type. (ts)
+            : [
+                ...allMenuItems.filter(i => i.name.includes(spotlightSearchTrigger)).map(i => ({ ...i, type: 'menu' as const })),
+                ...settings.data.students.filter(s =>
+
+/home/shu/starwood/src/routes/+layout.svelte:185:40
+Error: Cannot find name 'allMenuItems'. (ts)
+                    {#each settings.data.favorites as id}
+                        {@const item = allMenuItems.find(i => i.id === id)}
+                        {#if item}
+
+/home/shu/starwood/src/routes/+layout.svelte:185:58
+Error: Parameter 'i' implicitly has an 'any' type. (ts)
+                    {#each settings.data.favorites as id}
+                        {@const item = allMenuItems.find(i => i.id === id)}
+                        {#if item}
+
+/home/shu/starwood/src/routes/+layout.svelte:266:22
+Error: Cannot find name 'allMenuItems'. (ts)
+                <span class="text-[16px] font-black text-toss-grey-600">
+                    {allMenuItems.find(i => i.href === page.url.pathname)?.name || '페이지'}
+                </span>
+
+/home/shu/starwood/src/routes/+layout.svelte:266:40
+Error: Parameter 'i' implicitly has an 'any' type. (ts)
+                <span class="text-[16px] font-black text-toss-grey-600">
+                    {allMenuItems.find(i => i.href === page.url.pathname)?.name || '페이지'}
+                </span>
+
+/home/shu/starwood/src/routes/+page.svelte:181:37
+Warn: `<svelte:component>` is deprecated in runes mode — components are dynamic by default
+https://svelte.dev/e/svelte_component_deprecated (svelte)
+                                <div class="w-14 h-14 rounded-3xl flex items-center justify-center {todo.bg} {todo.color} transition-transform group-hover:scale-110">
+                                    <svelte:component this={todo.icon} size={28} />
+                                </div>
+
+/home/shu/starwood/src/routes/academic/classes/+page.svelte:132:17
+Warn: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+                {@const teacher = settings.data.teachers.find(t => t.id === c.teacherId)}
+                <div 
+                    onclick={() => selectedClassId = c.id}
+                    class="bg-white p-8 rounded-[48px] border border-toss-grey-100 shadow-sm hover:shadow-2xl hover:border-toss-blue/20 transition-all group flex flex-col justify-between cursor-pointer"
+                    in:fly={{ y: 20, duration: 400 }}
+                >
+                    <div>
+                        <div class="flex justify-between items-start mb-8">
+                            <span class="px-3 py-1.5 rounded-2xl {c.billingType === 'session' ? 'bg-purple-50 text-purple-600' : 'bg-toss-blue-light text-toss-blue'} text-[11px] font-black uppercase tracking-wider">
+                                {c.billingType === 'session' ? '횟수제' : '월정액'}
+                            </span>
+                            <div class="flex gap-1.5">
+                                {#each c.day as d}
+                                    <span class="w-8 h-8 rounded-xl bg-toss-grey-100 flex items-center justify-center text-[13px] font-black text-toss-grey-500 group-hover:bg-toss-blue group-hover:text-white transition-colors">{d}</span>
+                                {/each}
+                            </div>
+                        </div>
+
+                        <h3 class="text-[22px] font-black group-hover:text-toss-blue transition-colors leading-tight">{c.name}</h3>
+                        <p class="text-[15px] font-bold text-toss-grey-400 mt-2 flex items-center gap-2">
+                            <User size={16} /> {teacher?.name || '미배정'} 강사
+                        </p>
+                        
+                        <div class="mt-8 grid grid-cols-2 gap-4">
+                            <div class="p-4 bg-toss-grey-100 rounded-3xl">
+                                <p class="text-[11px] font-black text-toss-grey-400 uppercase tracking-widest mb-1">예상 매출</p>
+                                <p class="text-[17px] font-black text-toss-grey-600">₩{fmt(stats.revenue)}</p>
+                            </div>
+                            <div class="p-4 bg-toss-grey-100 rounded-3xl">
+                                <p class="text-[11px] font-black text-toss-grey-400 uppercase tracking-widest mb-1">인원/정원</p>
+                                <p class="text-[17px] font-black {stats.count >= c.maxStudents ? 'text-red-500' : 'text-toss-blue'}">
+                                    {stats.count} <span class="text-toss-grey-300 font-bold ml-0.5">/ {c.maxStudents}</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 pt-6 border-t border-toss-grey-100 flex justify-between items-center">
+                        <div class="flex items-center gap-2 text-toss-grey-400">
+                            <Clock size={16} />
+                            <span class="text-[14px] font-bold">{c.time}</span>
+                        </div>
+                        {#if stats.unpaid > 0}
+                            <div class="flex items-center gap-1.5 text-red-500 animate-pulse">
+                                <AlertCircle size={14} />
+                                <span class="text-[13px] font-black text-red-500">미수 ₩{fmt(stats.unpaid)}</span>
+                            </div>
+                        {:else}
+                            <div class="flex items-center gap-1.5 text-toss-blue">
+                                <Wallet size={16} />
+                                <span class="text-[13px] font-black">완납</span>
+                            </div>
+                        {/if}
+                    </div>
+                </div>
+            {/each}
+
+/home/shu/starwood/src/routes/academic/classes/+page.svelte:132:17
+Warn: `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+                {@const teacher = settings.data.teachers.find(t => t.id === c.teacherId)}
+                <div 
+                    onclick={() => selectedClassId = c.id}
+                    class="bg-white p-8 rounded-[48px] border border-toss-grey-100 shadow-sm hover:shadow-2xl hover:border-toss-blue/20 transition-all group flex flex-col justify-between cursor-pointer"
+                    in:fly={{ y: 20, duration: 400 }}
+                >
+                    <div>
+                        <div class="flex justify-between items-start mb-8">
+                            <span class="px-3 py-1.5 rounded-2xl {c.billingType === 'session' ? 'bg-purple-50 text-purple-600' : 'bg-toss-blue-light text-toss-blue'} text-[11px] font-black uppercase tracking-wider">
+                                {c.billingType === 'session' ? '횟수제' : '월정액'}
+                            </span>
+                            <div class="flex gap-1.5">
+                                {#each c.day as d}
+                                    <span class="w-8 h-8 rounded-xl bg-toss-grey-100 flex items-center justify-center text-[13px] font-black text-toss-grey-500 group-hover:bg-toss-blue group-hover:text-white transition-colors">{d}</span>
+                                {/each}
+                            </div>
+                        </div>
+
+                        <h3 class="text-[22px] font-black group-hover:text-toss-blue transition-colors leading-tight">{c.name}</h3>
+                        <p class="text-[15px] font-bold text-toss-grey-400 mt-2 flex items-center gap-2">
+                            <User size={16} /> {teacher?.name || '미배정'} 강사
+                        </p>
+                        
+                        <div class="mt-8 grid grid-cols-2 gap-4">
+                            <div class="p-4 bg-toss-grey-100 rounded-3xl">
+                                <p class="text-[11px] font-black text-toss-grey-400 uppercase tracking-widest mb-1">예상 매출</p>
+                                <p class="text-[17px] font-black text-toss-grey-600">₩{fmt(stats.revenue)}</p>
+                            </div>
+                            <div class="p-4 bg-toss-grey-100 rounded-3xl">
+                                <p class="text-[11px] font-black text-toss-grey-400 uppercase tracking-widest mb-1">인원/정원</p>
+                                <p class="text-[17px] font-black {stats.count >= c.maxStudents ? 'text-red-500' : 'text-toss-blue'}">
+                                    {stats.count} <span class="text-toss-grey-300 font-bold ml-0.5">/ {c.maxStudents}</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 pt-6 border-t border-toss-grey-100 flex justify-between items-center">
+                        <div class="flex items-center gap-2 text-toss-grey-400">
+                            <Clock size={16} />
+                            <span class="text-[14px] font-bold">{c.time}</span>
+                        </div>
+                        {#if stats.unpaid > 0}
+                            <div class="flex items-center gap-1.5 text-red-500 animate-pulse">
+                                <AlertCircle size={14} />
+                                <span class="text-[13px] font-black text-red-500">미수 ₩{fmt(stats.unpaid)}</span>
+                            </div>
+                        {:else}
+                            <div class="flex items-center gap-1.5 text-toss-blue">
+                                <Wallet size={16} />
+                                <span class="text-[13px] font-black">완납</span>
+                            </div>
+                        {/if}
+                    </div>
+                </div>
+            {/each}
+
+/home/shu/starwood/src/routes/academic/classes/+page.svelte:288:29
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                        <div class="space-y-2">
+                            <label class="text-[13px] font-black text-toss-grey-400 uppercase tracking-widest">클래스명</label>
+                            <input bind:value={editingClass.name} class="toss-input" placeholder="예: 초등 영문법 A" />
+
+/home/shu/starwood/src/routes/academic/classes/+page.svelte:292:29
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                        <div class="space-y-2">
+                            <label class="text-[13px] font-black text-toss-grey-400 uppercase tracking-widest">담당 강사</label>
+                            <select bind:value={editingClass.teacherId} class="toss-input">
+
+/home/shu/starwood/src/routes/academic/classes/+page.svelte:301:33
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                            <div class="space-y-2">
+                                <label class="text-[13px] font-black text-toss-grey-400 uppercase tracking-widest">정원</label>
+                                <input type="number" bind:value={editingClass.maxStudents} class="toss-input" />
+
+/home/shu/starwood/src/routes/academic/classes/+page.svelte:305:33
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                            <div class="space-y-2">
+                                <label class="text-[13px] font-black text-toss-grey-400 uppercase tracking-widest">수업 시간</label>
+                                <input bind:value={editingClass.time} class="toss-input" placeholder="17:00-19:00" />
+
+/home/shu/starwood/src/routes/academic/classes/+page.svelte:371:9
+Warn: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+        </div>
+        <div 
+            class="fixed inset-0 bg-black/5 z-[90]" 
+            onclick={() => selectedClassId = null}
+            transition:fade
+        ></div>
+    {/if}
+
+/home/shu/starwood/src/routes/academic/classes/+page.svelte:371:9
+Warn: `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+        </div>
+        <div 
+            class="fixed inset-0 bg-black/5 z-[90]" 
+            onclick={() => selectedClassId = null}
+            transition:fade
+        ></div>
+    {/if}
+
+/home/shu/starwood/src/routes/academic/timetable/+page.svelte:265:25
+Warn: `<div>` with a dragstart handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+                    {#each unassignedClasses as cls}
+                        <div 
+                            draggable="true"
+                            ondragstart={() => draggedClassId = cls.id}
+                            class="p-5 rounded-[28px] border border-toss-grey-100 bg-toss-grey-50/50 hover:border-toss-blue/30 hover:bg-white transition-all cursor-grab group"
+                        >
+                            <div class="flex justify-between items-start mb-3">
+                                <h5 class="text-[15px] font-black text-toss-grey-600 group-hover:text-toss-blue">{cls.name}</h5>
+                                <span class="text-[11px] font-black text-orange-500">잔여 {cls.remainingCount}회</span>
+                            </div>
+                            
+                            <div class="flex items-center gap-3 text-[12px] font-bold text-toss-grey-400">
+                                <span class="flex items-center gap-1"><Users size={12} /> {cls.studentIds.length}명</span>
+                                <span class="flex items-center gap-1"><Clock size={12} /> {cls.duration}분</span>
+                            </div>
+
+                            {#if cls.failures.length > 0}
+                                <div class="mt-4 p-3 bg-red-50 rounded-2xl border border-red-100 flex items-center gap-2 text-red-500">
+                                    <AlertTriangle size={14} />
+                                    <span class="text-[11px] font-black truncate">{cls.failures[0].conflictReason}</span>
+                                </div>
+                            {/if}
+                        </div>
+                    {/each}
+
+/home/shu/starwood/src/routes/academic/timetable/+page.svelte:393:9
+Warn: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+    <div class="fixed inset-0 z-[200] flex items-center justify-center p-6" in:fade>
+        <div class="absolute inset-0 bg-toss-grey-900/60 backdrop-blur-sm" onclick={() => showAutoConfirm = false}></div>
+        <div class="relative bg-white w-full max-w-md rounded-[48px] p-10 shadow-2xl space-y-8" in:scale>
+
+/home/shu/starwood/src/routes/academic/timetable/+page.svelte:393:9
+Warn: `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+    <div class="fixed inset-0 z-[200] flex items-center justify-center p-6" in:fade>
+        <div class="absolute inset-0 bg-toss-grey-900/60 backdrop-blur-sm" onclick={() => showAutoConfirm = false}></div>
+        <div class="relative bg-white w-full max-w-md rounded-[48px] p-10 shadow-2xl space-y-8" in:scale>
+
+/home/shu/starwood/src/routes/academic/timetable/+page.svelte:431:21
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                <div class="space-y-2 col-span-2">
+                    <label class="text-[13px] font-black text-toss-grey-300">요일 선택</label>
+                    <div class="flex gap-1.5">
+
+/home/shu/starwood/src/routes/academic/timetable/+page.svelte:442:21
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                <div class="space-y-2">
+                    <label class="text-[13px] font-black text-toss-grey-300">시작 시간</label>
+                    <input bind:value={selectedEvent.startTime} class="toss-input" />
+
+/home/shu/starwood/src/routes/academic/timetable/+page.svelte:446:21
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                <div class="space-y-2">
+                    <label class="text-[13px] font-black text-toss-grey-300">종료 시간</label>
+                    <input bind:value={selectedEvent.endTime} class="toss-input" />
+
+/home/shu/starwood/src/routes/academic/timetable/+page.svelte:450:21
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                <div class="space-y-2">
+                    <label class="text-[13px] font-black text-toss-grey-300">담당 강사</label>
+                    <select bind:value={selectedEvent.teacherId} class="toss-input">
+
+/home/shu/starwood/src/routes/academic/timetable/+page.svelte:458:21
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                <div class="space-y-2">
+                    <label class="text-[13px] font-black text-toss-grey-300">배정 강의실</label>
+                    <select bind:value={selectedEvent.roomId} class="toss-input">
+
+/home/shu/starwood/src/routes/communication/send/+page.svelte:161:25
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                    <div class="space-y-4">
+                        <label class="block text-[14px] font-black text-toss-grey-400">발송 그룹 선택</label>
+                        <div class="grid grid-cols-2 gap-2">
+
+/home/shu/starwood/src/routes/communication/send/+page.svelte:181:29
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                        {#if targetType === 'class'}
+                            <label class="block text-[14px] font-black text-toss-grey-400">반 선택</label>
+                            <select bind:value={selectedClassId} class="w-full h-[56px] px-5 rounded-2xl bg-toss-grey-100 border-none font-bold text-toss-grey-600 outline-none focus:ring-2 focus:ring-toss-blue">
+
+/home/shu/starwood/src/routes/communication/send/+page.svelte:188:29
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                        {:else if targetType === 'individual'}
+                            <label class="block text-[14px] font-black text-toss-grey-400">선택된 대상</label>
+                            <div class="flex flex-wrap gap-2">
+
+/home/shu/starwood/src/routes/finance/refunds/+page.svelte:245:37
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                                <div class="space-y-2">
+                                    <label class="text-[14px] font-black text-toss-grey-500">총 교습 시간 (또는 횟수)</label>
+                                    <input type="number" bind:value={totalLessons} class="w-full h-14 bg-white border-2 border-toss-grey-100 rounded-2xl px-6 font-black text-[18px] focus:border-toss-blue outline-none transition-all" />
+
+/home/shu/starwood/src/routes/finance/refunds/+page.svelte:249:37
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                                <div class="space-y-2">
+                                    <label class="text-[14px] font-black text-toss-grey-500">진행한 시간 (또는 횟수)</label>
+                                    <input type="number" bind:value={attendedLessons} class="w-full h-14 bg-white border-2 border-toss-grey-100 rounded-2xl px-6 font-black text-[18px] focus:border-toss-blue outline-none transition-all" />
+
+/home/shu/starwood/src/routes/finance/refunds/+page.svelte:315:5
+Warn: Unused CSS selector ".toss-title"
+https://svelte.dev/e/css_unused_selector (svelte)
+    }
+    .toss-title {
+        font-size: 32px;
+
+/home/shu/starwood/src/routes/finance/refunds/+page.svelte:320:5
+Warn: Unused CSS selector ".toss-desc"
+https://svelte.dev/e/css_unused_selector (svelte)
+    }
+    .toss-desc {
+        font-size: 16px;
+
+/home/shu/starwood/src/routes/finance/refunds/+page.svelte:326:5
+Warn: Unused CSS selector ".toss-input"
+https://svelte.dev/e/css_unused_selector (svelte)
+    }
+    .toss-input {
+        width: 100%;
+
+/home/shu/starwood/src/routes/finance/refunds/+page.svelte:336:5
+Warn: Unused CSS selector ".toss-input:focus"
+https://svelte.dev/e/css_unused_selector (svelte)
+    }
+    .toss-input:focus {
+        background: white;
+
+/home/shu/starwood/src/routes/management/expenses/+page.svelte:179:21
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                <div class="space-y-2">
+                    <label class="text-[12px] font-black text-toss-grey-300">카테고리</label>
+                    <select bind:value={newExpense.category} class="toss-input">
+
+/home/shu/starwood/src/routes/management/expenses/+page.svelte:188:21
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                <div class="space-y-2">
+                    <label class="text-[12px] font-black text-toss-grey-300">지출 일자</label>
+                    <input type="date" bind:value={newExpense.date} class="toss-input" />
+
+/home/shu/starwood/src/routes/management/expenses/+page.svelte:192:21
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                <div class="space-y-2">
+                    <label class="text-[12px] font-black text-toss-grey-300">금액</label>
+                    <input type="number" bind:value={newExpense.amount} class="toss-input font-black text-right" placeholder="0" />
+
+/home/shu/starwood/src/routes/management/expenses/+page.svelte:196:21
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                <div class="space-y-2">
+                    <label class="text-[12px] font-black text-toss-grey-300">결제 수단</label>
+                    <select bind:value={newExpense.payMethod} class="toss-input">
+
+/home/shu/starwood/src/routes/management/expenses/+page.svelte:204:21
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                <div class="md:col-span-3 space-y-2">
+                    <label class="text-[12px] font-black text-toss-grey-300">지출 내용 요약</label>
+                    <input bind:value={newExpense.description} class="toss-input" placeholder="증빙 서류에 표기될 내용을 입력하세요." />
+
+/home/shu/starwood/src/routes/settings/base/+page.svelte:54:29
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                        <div class="space-y-2">
+                            <label class="text-[13px] font-black text-toss-grey-400">학원 명칭</label>
+                            <input type="text" bind:value={settings.data.academy.name} class="toss-input" />
+
+/home/shu/starwood/src/routes/settings/base/+page.svelte:58:29
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                        <div class="space-y-2">
+                            <label class="text-[13px] font-black text-toss-grey-400">사업자 등록번호</label>
+                            <input type="text" bind:value={settings.data.academy.businessId} class="toss-input" />
+
+/home/shu/starwood/src/routes/settings/base/+page.svelte:62:29
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                        <div class="space-y-2">
+                            <label class="text-[13px] font-black text-toss-grey-400">원장 명의</label>
+                            <input type="text" bind:value={settings.data.academy.director} class="toss-input" />
+
+/home/shu/starwood/src/routes/settings/base/+page.svelte:66:29
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                        <div class="space-y-2">
+                            <label class="text-[13px] font-black text-toss-grey-400">결제 정책 (기본)</label>
+                            <select bind:value={settings.data.academy.refundMode} class="toss-input bg-toss-grey-100/50">
+
+/home/shu/starwood/src/routes/settings/base/+page.svelte:74:29
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                        <div class="md:col-span-2 space-y-2">
+                            <label class="text-[13px] font-black text-toss-grey-400">학원 주소</label>
+                            <input type="text" bind:value={settings.data.academy.address} class="toss-input" />
+
+/home/shu/starwood/src/routes/settings/products/+page.svelte:76:25
+Warn: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+                    {#each settings.data.products as p}
+                        <div 
+                            class="bg-white p-8 rounded-[40px] border border-toss-grey-100 shadow-sm hover:shadow-xl transition-all group cursor-pointer"
+                            onclick={() => editingProduct = JSON.parse(JSON.stringify(p))}
+                        >
+                            <div class="flex justify-between items-start mb-6">
+                                <div class="w-12 h-12 bg-toss-blue-light rounded-2xl flex items-center justify-center text-toss-blue">
+                                    <CreditCard size={24} />
+                                </div>
+                                <span class="px-3 py-1 bg-toss-grey-50 text-toss-grey-400 text-[11px] font-black rounded-lg uppercase tracking-widest">{p.billingType === 'flat' ? '정액제' : '횟수제'}</span>
+                            </div>
+                            <h4 class="text-[20px] font-black text-toss-grey-600 group-hover:text-toss-blue transition-colors">{p.name}</h4>
+                            <p class="text-[24px] font-black text-toss-grey-600 mt-2">₩{fmt(p.baseFee)}</p>
+                            <div class="mt-6 flex justify-between items-center text-[13px] font-bold text-toss-grey-300">
+                                <span>연동 클래스: {p.classIds.length}개</span>
+                                <ChevronRight size={18} />
+                            </div>
+                        </div>
+                    {/each}
+
+/home/shu/starwood/src/routes/settings/products/+page.svelte:76:25
+Warn: `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+                    {#each settings.data.products as p}
+                        <div 
+                            class="bg-white p-8 rounded-[40px] border border-toss-grey-100 shadow-sm hover:shadow-xl transition-all group cursor-pointer"
+                            onclick={() => editingProduct = JSON.parse(JSON.stringify(p))}
+                        >
+                            <div class="flex justify-between items-start mb-6">
+                                <div class="w-12 h-12 bg-toss-blue-light rounded-2xl flex items-center justify-center text-toss-blue">
+                                    <CreditCard size={24} />
+                                </div>
+                                <span class="px-3 py-1 bg-toss-grey-50 text-toss-grey-400 text-[11px] font-black rounded-lg uppercase tracking-widest">{p.billingType === 'flat' ? '정액제' : '횟수제'}</span>
+                            </div>
+                            <h4 class="text-[20px] font-black text-toss-grey-600 group-hover:text-toss-blue transition-colors">{p.name}</h4>
+                            <p class="text-[24px] font-black text-toss-grey-600 mt-2">₩{fmt(p.baseFee)}</p>
+                            <div class="mt-6 flex justify-between items-center text-[13px] font-bold text-toss-grey-300">
+                                <span>연동 클래스: {p.classIds.length}개</span>
+                                <ChevronRight size={18} />
+                            </div>
+                        </div>
+                    {/each}
+
+/home/shu/starwood/src/routes/settings/products/+page.svelte:178:17
+Warn: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+            {#each settings.data.discounts as d}
+                <div 
+                    class="bg-white p-10 rounded-[48px] border border-toss-grey-100 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden cursor-pointer"
+                    onclick={() => editingDiscount = JSON.parse(JSON.stringify(d))}
+                >
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="w-14 h-14 bg-purple-50 rounded-2xl flex items-center justify-center text-purple-600">
+                            <Percent size={28} />
+                        </div>
+                        <button class="p-2 text-toss-grey-200 hover:text-red-500 transition-colors" onclick={(e) => { e.stopPropagation(); settings.data.discounts = settings.data.discounts.filter(item => item.id !== d.id); }}>
+                            <Trash2 size={18} />
+                        </button>
+                    </div>
+                    <h4 class="text-[22px] font-black text-toss-grey-600 group-hover:text-toss-blue transition-colors">{d.name}</h4>
+                    <p class="text-[15px] font-bold text-toss-grey-400 mt-2">{d.description || '설명 없음'}</p>
+                    <div class="mt-8 pt-8 border-t border-toss-grey-50 flex justify-between items-end">
+                        <div>
+                            <p class="text-[11px] font-black text-toss-grey-300 uppercase tracking-widest">할인 혜택</p>
+                            <p class="text-[28px] font-black text-purple-600">{d.value}{d.type === 'percent' ? '%' : '원'}</p>
+                        </div>
+                        <span class="text-[13px] font-black text-toss-blue">편집 <ChevronRight size={16} class="inline" /></span>
+                    </div>
+                </div>
+            {/each}
+
+/home/shu/starwood/src/routes/settings/products/+page.svelte:178:17
+Warn: `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+            {#each settings.data.discounts as d}
+                <div 
+                    class="bg-white p-10 rounded-[48px] border border-toss-grey-100 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden cursor-pointer"
+                    onclick={() => editingDiscount = JSON.parse(JSON.stringify(d))}
+                >
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="w-14 h-14 bg-purple-50 rounded-2xl flex items-center justify-center text-purple-600">
+                            <Percent size={28} />
+                        </div>
+                        <button class="p-2 text-toss-grey-200 hover:text-red-500 transition-colors" onclick={(e) => { e.stopPropagation(); settings.data.discounts = settings.data.discounts.filter(item => item.id !== d.id); }}>
+                            <Trash2 size={18} />
+                        </button>
+                    </div>
+                    <h4 class="text-[22px] font-black text-toss-grey-600 group-hover:text-toss-blue transition-colors">{d.name}</h4>
+                    <p class="text-[15px] font-bold text-toss-grey-400 mt-2">{d.description || '설명 없음'}</p>
+                    <div class="mt-8 pt-8 border-t border-toss-grey-50 flex justify-between items-end">
+                        <div>
+                            <p class="text-[11px] font-black text-toss-grey-300 uppercase tracking-widest">할인 혜택</p>
+                            <p class="text-[28px] font-black text-purple-600">{d.value}{d.type === 'percent' ? '%' : '원'}</p>
+                        </div>
+                        <span class="text-[13px] font-black text-toss-blue">편집 <ChevronRight size={16} class="inline" /></span>
+                    </div>
+                </div>
+            {/each}
+
+/home/shu/starwood/src/routes/settings/products/+page.svelte:222:25
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                    <div class="space-y-2">
+                        <label class="text-[13px] font-bold text-toss-grey-400">상품명</label>
+                        <input bind:value={editingProduct.name} class="toss-input h-[60px]" />
+
+/home/shu/starwood/src/routes/settings/products/+page.svelte:227:29
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                        <div class="space-y-2">
+                            <label class="text-[13px] font-bold text-toss-grey-400">청구 방식</label>
+                            <select bind:value={editingProduct.billingType} class="toss-input h-[60px] cursor-pointer">
+
+/home/shu/starwood/src/routes/settings/products/+page.svelte:234:29
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                        <div class="space-y-2">
+                            <label class="text-[13px] font-bold text-toss-grey-400">금액 (원)</label>
+                            <input type="number" bind:value={editingProduct.baseFee} class="toss-input h-[60px]" />
+
+/home/shu/starwood/src/routes/settings/products/+page.svelte:254:25
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                    <div class="space-y-2">
+                        <label class="text-[13px] font-bold text-toss-grey-400">항목명</label>
+                        <input bind:value={editingDiscount.name} class="toss-input h-[60px]" />
+
+/home/shu/starwood/src/routes/settings/products/+page.svelte:259:29
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                        <div class="space-y-2">
+                            <label class="text-[13px] font-bold text-toss-grey-400">할인 타입</label>
+                            <select bind:value={editingDiscount.type} class="toss-input h-[60px] cursor-pointer">
+
+/home/shu/starwood/src/routes/settings/products/+page.svelte:266:29
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                        <div class="space-y-2">
+                            <label class="text-[13px] font-bold text-toss-grey-400">할인 수치</label>
+                            <input type="number" bind:value={editingDiscount.value} class="toss-input h-[60px]" />
+
+/home/shu/starwood/src/routes/settings/products/+page.svelte:271:25
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                    <div class="space-y-2">
+                        <label class="text-[13px] font-bold text-toss-grey-400">설명</label>
+                        <textarea bind:value={editingDiscount.description} class="toss-input h-[100px] py-4 resize-none"></textarea>
+
+/home/shu/starwood/src/routes/settings/users/+page.svelte:147:5
+Warn: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+    <!-- Backdrop -->
+    <div 
+        class="fixed inset-0 bg-black/10 backdrop-blur-sm z-[90] transition-opacity" 
+        onclick={() => isEditing = false}
+        in:fade
+    ></div>
+
+/home/shu/starwood/src/routes/settings/users/+page.svelte:147:5
+Warn: `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+    <!-- Backdrop -->
+    <div 
+        class="fixed inset-0 bg-black/10 backdrop-blur-sm z-[90] transition-opacity" 
+        onclick={() => isEditing = false}
+        in:fade
+    ></div>
+
+/home/shu/starwood/src/routes/settings/users/+page.svelte:203:21
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                <div class="space-y-2 pt-2">
+                    <label class="text-[13px] font-black text-toss-grey-400">
+                        {editingTeacher.settlementType === 'ratio' || editingTeacher.settlementType === 'equity' ? '비율 (%)' : '단가 (원)'}
+                    </label>
+                    <div class="relative">
+
+/home/shu/starwood/src/routes/students/+page.svelte:473:21
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                <div class="space-y-2">
+                    <label class="text-[12px] font-black text-toss-grey-400">이름</label>
+                    <input bind:value={editingStudent.name} class="toss-input" placeholder="이름 입력" />
+
+/home/shu/starwood/src/routes/students/+page.svelte:477:21
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                <div class="space-y-2">
+                    <label class="text-[12px] font-black text-toss-grey-400">성별</label>
+                    <div class="flex gap-2">
+
+/home/shu/starwood/src/routes/students/+page.svelte:491:17
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+            <div class="space-y-2">
+                <label class="text-[12px] font-black text-toss-grey-400">학생 연락처</label>
+                <input bind:value={editingStudent.studentPhone} class="toss-input" placeholder="010-0000-0000" />
+
+/home/shu/starwood/src/routes/students/+page.svelte:548:21
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                <div class="space-y-2">
+                    <label class="text-[12px] font-black text-toss-grey-400">학교</label>
+                    <input bind:value={editingStudent.school} class="toss-input" placeholder="학교명" />
+
+/home/shu/starwood/src/routes/students/+page.svelte:552:21
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+                <div class="space-y-2">
+                    <label class="text-[12px] font-black text-toss-grey-400">학년</label>
+                    <select bind:value={editingStudent.grade} class="toss-input">
+
+/home/shu/starwood/src/routes/students/[id]/+page.svelte:28:10
+Warn: This reference only captures the initial value of `student`. Did you mean to reference it inside a closure instead?
+https://svelte.dev/e/state_referenced_locally (svelte)
+
+    if (!student) {
+        // Fallback if not found (shouldn't happen with mock data)
+
+/home/shu/starwood/src/routes/students/admissions/+page.svelte:186:17
+Warn: A form label must be associated with a control
+https://svelte.dev/e/a11y_label_has_associated_control (svelte)
+            <section class="space-y-4">
+                <label class="text-[12px] font-black text-toss-grey-300 uppercase tracking-widest">메모 / 특이사항</label>
+                <textarea
+
+/home/shu/starwood/src/routes/students/consultations/+page.svelte:128:17
+Warn: `<div>` with a dragover or drop handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+            {#each stages as stage}
+                <div 
+                    class="flex flex-col gap-5 bg-toss-grey-50/50 p-5 rounded-[40px] border border-toss-grey-100 min-h-[700px] transition-colors"
+                    ondragover={(e) => e.preventDefault()}
+                    ondrop={() => onDrop(stage.id)}
+                >
+                    <div class="px-3 pt-2">
+                        <div class="flex items-center justify-between">
+                            <span class="px-3 py-1 rounded-lg {stage.color} text-white text-[11px] font-black uppercase tracking-wider">{stage.label}</span>
+                            <span class="text-toss-grey-300 font-black text-[14px]">{stageCounts[stage.id] || 0}</span>
+                        </div>
+                        <p class="text-[12px] font-bold text-toss-grey-300 mt-2">{stage.desc}</p>
+                    </div>
+
+                    <div class="flex-1 space-y-4">
+                        {#each settings.data.consultations.filter(t => t.stage === stage.id) as ticket (ticket.id)}
+                            <!-- svelte-ignore a11y_no_static_element_interactions -->
+                            <div 
+                                draggable="true"
+                                ondragstart={() => onDragStart(ticket.id)}
+                                onclick={() => openTicket(ticket.id)}
+                                class="bg-white p-6 rounded-[32px] border border-toss-grey-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-grab active:cursor-grabbing group relative overflow-hidden"
+                                in:fly={{ y: 20, duration: 400 }}
+                            >
+                                <div class="flex justify-between items-start mb-4">
+                                    <span class="text-[11px] font-black text-white px-2 py-0.5 rounded bg-toss-grey-200">{ticket.type}</span>
+                                    <span class="text-[11px] font-bold text-toss-grey-300">{ticket.date.slice(5)}</span>
+                                </div>
+                                
+                                <h4 class="text-[18px] font-black text-toss-grey-600 group-hover:text-toss-blue transition-colors">{ticket.name}</h4>
+                                <p class="text-[14px] font-bold text-toss-grey-400 mt-1">{ticket.phone}</p>
+
+                                {#if ticket.note}
+                                    <p class="mt-4 text-[13px] font-medium text-toss-grey-500 line-clamp-2 leading-relaxed bg-toss-grey-50 p-4 rounded-2xl border border-toss-grey-100/50">
+                                        {ticket.note}
+                                    </p>
+                                {/if}
+
+                                <div class="mt-4 flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                                    <button onclick={(e) => { e.stopPropagation(); deleteTicket(ticket.id); }} class="p-2 rounded-xl bg-red-50 text-red-400 hover:text-red-600 transition-colors"><Trash2 size={16} /></button>
+                                    <button class="p-2 rounded-xl bg-toss-blue-light text-toss-blue transition-colors"><ChevronRight size={16} /></button>
+                                </div>
+                            </div>
+                        {/each}
+
+                        <button 
+                            onclick={addTicket}
+                            class="w-full py-5 rounded-[32px] border-2 border-dashed border-toss-grey-100 text-toss-grey-300 font-black text-[14px] hover:border-toss-blue/30 hover:bg-white hover:text-toss-blue transition-all"
+                        >
+                            + 추가하기
+                        </button>
+                    </div>
+                </div>
+            {/each}
+
+/home/shu/starwood/src/routes/students/consultations/+page.svelte:144:29
+Warn: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+                            <!-- svelte-ignore a11y_no_static_element_interactions -->
+                            <div 
+                                draggable="true"
+                                ondragstart={() => onDragStart(ticket.id)}
+                                onclick={() => openTicket(ticket.id)}
+                                class="bg-white p-6 rounded-[32px] border border-toss-grey-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-grab active:cursor-grabbing group relative overflow-hidden"
+                                in:fly={{ y: 20, duration: 400 }}
+                            >
+                                <div class="flex justify-between items-start mb-4">
+                                    <span class="text-[11px] font-black text-white px-2 py-0.5 rounded bg-toss-grey-200">{ticket.type}</span>
+                                    <span class="text-[11px] font-bold text-toss-grey-300">{ticket.date.slice(5)}</span>
+                                </div>
+                                
+                                <h4 class="text-[18px] font-black text-toss-grey-600 group-hover:text-toss-blue transition-colors">{ticket.name}</h4>
+                                <p class="text-[14px] font-bold text-toss-grey-400 mt-1">{ticket.phone}</p>
+
+                                {#if ticket.note}
+                                    <p class="mt-4 text-[13px] font-medium text-toss-grey-500 line-clamp-2 leading-relaxed bg-toss-grey-50 p-4 rounded-2xl border border-toss-grey-100/50">
+                                        {ticket.note}
+                                    </p>
+                                {/if}
+
+                                <div class="mt-4 flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                                    <button onclick={(e) => { e.stopPropagation(); deleteTicket(ticket.id); }} class="p-2 rounded-xl bg-red-50 text-red-400 hover:text-red-600 transition-colors"><Trash2 size={16} /></button>
+                                    <button class="p-2 rounded-xl bg-toss-blue-light text-toss-blue transition-colors"><ChevronRight size={16} /></button>
+                                </div>
+                            </div>
+                        {/each}
+
+====================================
+svelte-check found 7 errors and 60 warnings in 14 files
