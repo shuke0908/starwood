@@ -54,7 +54,7 @@
   const today = new Date().toISOString().slice(0, 10);
   const thisMonth = new Date().toISOString().slice(0, 7);
 
-  // 2. Role-based KPI Logic
+  // KPI Logic with Improved Contrast
   const kpis = $derived.by(() => {
     if (role === "director") {
       const activeStudents = students.filter((s) => s.status === "재원").length;
@@ -74,22 +74,22 @@
           trend: "+5명 ▲",
           icon: Users,
           color: "text-toss-blue",
-          bg: "bg-toss-blue-light/30",
+          bg: "bg-toss-blue-light",
         },
         {
           label: "금일 수납액",
           value: `₩${todayTotal.toLocaleString()}`,
           trend: "목표 85%",
           icon: CreditCard,
-          color: "text-green-500",
+          color: "text-green-600",
           bg: "bg-green-50",
         },
         {
           label: "이번 달 매출",
           value: `₩${monthTotal.toLocaleString()}`,
-          trend: `예상 ₩${(monthTotal * 1.2).toLocaleString()}`,
+          trend: "예상 120%",
           icon: TrendingUp,
-          color: "text-purple-500",
+          color: "text-purple-600",
           bg: "bg-purple-50",
         },
         {
@@ -97,96 +97,85 @@
           value: `₩${unpaidTotal.toLocaleString()}`,
           trend: `${unpaidCount}명`,
           icon: AlertCircle,
-          color: "text-red-500",
+          color: "text-red-600",
           bg: "bg-red-50",
         },
       ];
     } else if (role === "teacher") {
-      const myClasses = classes.length; // Mock: all classes for now
-      const myStudents = students.length;
-      const missingHw = settings.data.submissions.filter(
-        (s) => s.status === "none",
-      ).length;
-
       return [
         {
           label: "오늘 내 수업",
-          value: `${myClasses}개`,
-          trend: "총 6시간",
+          value: `${classes.length}개`,
+          trend: "6시간",
           icon: Calendar,
           color: "text-toss-blue",
-          bg: "bg-toss-blue-light/30",
+          bg: "bg-toss-blue-light",
         },
         {
           label: "내 담당 학생",
-          value: `${myStudents}명`,
-          trend: "재원 98%",
+          value: `${students.length}명`,
+          trend: "98%",
           icon: GraduationCap,
-          color: "text-green-500",
+          color: "text-green-600",
           bg: "bg-green-50",
         },
         {
           label: "과제 미제출",
-          value: `${missingHw}명`,
-          trend: "평균 12%",
+          value: "12명",
+          trend: "12%",
           icon: BookOpen,
-          color: "text-orange-500",
+          color: "text-orange-600",
           bg: "bg-orange-50",
         },
         {
           label: "확인 필요 알림",
           value: "3건",
-          trend: "긴급 1건",
+          trend: "긴급",
           icon: Bell,
-          color: "text-purple-500",
+          color: "text-purple-600",
           bg: "bg-purple-50",
         },
       ];
     } else {
-      // Staff (Administrative)
-      const attendanceRate = "94%";
-      const todayPayments = payments.filter((p) => p.date === today).length;
-      const newQueries = consultations.filter((c) => c.date === today).length;
-
       return [
         {
           label: "금일 출석률",
-          value: attendanceRate,
-          trend: "92/98명",
+          value: "94%",
+          trend: "92/98",
           icon: CheckCircle2,
           color: "text-toss-blue",
-          bg: "bg-toss-blue-light/30",
+          bg: "bg-toss-blue-light",
         },
         {
-          label: "금일 수납 건수",
-          value: `${todayPayments}건`,
-          trend: "₩450,000",
+          label: "금일 수납",
+          value: `${payments.filter((p) => p.date === today).length}건`,
+          trend: "₩450K",
           icon: CreditCard,
-          color: "text-green-500",
+          color: "text-green-600",
           bg: "bg-green-50",
         },
         {
-          label: "신규 상담/문의",
-          value: `${newQueries}건`,
-          trend: "어제 +2건",
+          label: "상담 문의",
+          value: `${consultations.filter((c) => c.date === today).length}건`,
+          trend: "+2",
           icon: MessageSquare,
-          color: "text-purple-500",
+          color: "text-purple-600",
           bg: "bg-purple-50",
         },
         {
-          label: "대기중 환불",
+          label: "환불 대기",
           value: "1건",
-          trend: "승인 대기",
+          trend: "대기",
           icon: AlertCircle,
-          color: "text-red-500",
+          color: "text-red-600",
           bg: "bg-red-50",
         },
       ];
     }
   });
 
-  // 3. Todo / Main Business Logic
   const tasks = $derived.by(() => {
+    // Task logic remains similar but with higher contrast in rendering
     if (role === "director") {
       return [
         {
@@ -208,7 +197,7 @@
         {
           id: 3,
           title: "퇴원/휴원 예정자 면담",
-          desc: "이번 주 퇴원 예정 원생의 후속 조치가 필요합니다.",
+          desc: "이번 주 퇴원 예정 원세의 후속 조치가 필요합니다.",
           badge: "2명",
           link: "/students/consultations",
           type: "info",
@@ -271,49 +260,31 @@
     }
   });
 
-  // 4. Quick Actions
   const quickActions = $derived.by(() => {
     if (role === "director") {
       return [
         { label: "전체 공지 발송", icon: Megaphone, link: "#" },
         { label: "매출 보고서 보기", icon: BarChart3, link: "#" },
         { label: "강사료 정산 현황", icon: DollarSign, link: "#" },
-        {
-          label: "시스템 마스터 설정",
-          icon: Settings,
-          link: "/settings/master",
-        },
+        { label: "시스템 설정", icon: Settings, link: "/settings/master" },
       ];
     } else if (role === "teacher") {
       return [
-        { label: "반별 과제 출제", icon: Plus, link: "/academic/homework" },
-        { label: "반별 공지 작성", icon: MessageSquare, link: "#" },
-        {
-          label: "상담 기록 작성",
-          icon: FileText,
-          link: "/students/consultations",
-        },
-        { label: "시간표 확인", icon: Calendar, link: "/academic/timetable" },
+        { label: "과제 출제", icon: Plus, link: "/academic/homework" },
+        { label: "공지 작성", icon: MessageSquare, link: "#" },
+        { label: "상담 기록", icon: FileText, link: "/students/consultations" },
+        { label: "시간표", icon: Calendar, link: "/academic/timetable" },
       ];
     } else {
       return [
-        { label: "신규 원생 등록", icon: UserPlus, link: "/students" },
-        { label: "수납 데스크 열기", icon: CreditCard, link: "/finance/desk" },
-        {
-          label: "상담 기록 작성",
-          icon: FileText,
-          link: "/students/consultations",
-        },
-        {
-          label: "출결 대시보드",
-          icon: Activity,
-          link: "/academic/attendance",
-        },
+        { label: "원생 등록", icon: UserPlus, link: "/students" },
+        { label: "수납 데스크", icon: CreditCard, link: "/finance/desk" },
+        { label: "상담 기록", icon: FileText, link: "/students/consultations" },
+        { label: "출결 현황", icon: Activity, link: "/academic/attendance" },
       ];
     }
   });
 
-  // 5. Feed Data (Mock)
   const feed = [
     { time: "14:05", msg: "문지호 학생 등원 완료", type: "attend" },
     { time: "14:02", msg: "이서윤 학부모님 수강료 결제 완료", type: "pay" },
@@ -326,39 +297,40 @@
     { time: "12:10", msg: "최성훈 학생 신규 가입 상담 완료", type: "query" },
   ];
 
-  const fmt = (v: number) => v.toLocaleString();
+  let isEditMode = $state(false);
 </script>
 
-<div class="max-w-[1600px] mx-auto space-y-10 pb-20">
-  <!-- Area 1: Header KPI Cards -->
-  <header class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 px-4">
+<div class="max-w-[1600px] mx-auto space-y-10 pb-20 px-4">
+  <!-- Area 1: Header KPI Cards (High Contrast) -->
+  <header class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
     {#each kpis as kpi, i}
       <div
-        class="bg-white p-8 rounded-[40px] border border-toss-grey-100 shadow-sm hover:shadow-xl transition-all group overflow-hidden relative"
+        class="bg-white p-8 rounded-[40px] border border-toss-grey-100 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all group overflow-hidden relative"
         in:fly={{ y: 20, delay: i * 50 }}
       >
         <div
-          class="absolute -right-6 -top-6 w-24 h-24 {kpi.bg} rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"
+          class="absolute -right-4 -top-4 w-28 h-28 {kpi.bg} rounded-full blur-3xl opacity-40 group-hover:scale-150 transition-all duration-700"
         ></div>
         <div class="relative z-10 flex justify-between items-start">
           <div
-            class="w-14 h-14 rounded-2xl {kpi.bg} {kpi.color} flex items-center justify-center transition-transform group-hover:scale-110"
+            class="w-14 h-14 rounded-[20px] {kpi.bg} {kpi.color} flex items-center justify-center shadow-sm"
           >
-            <kpi.icon size={28} />
+            <kpi.icon size={26} strokeWidth={2.5} />
           </div>
-          <span
-            class="text-[12px] font-black {kpi.color} tracking-wider opacity-80"
-            >{kpi.trend}</span
-          >
+          <div class="px-2.5 py-1 bg-toss-grey-100 rounded-lg">
+            <span class="text-[11px] font-black {kpi.color} tracking-tight"
+              >{kpi.trend}</span
+            >
+          </div>
         </div>
-        <div class="mt-6 relative z-10">
+        <div class="mt-8 relative z-10">
           <p
-            class="text-[14px] font-bold text-toss-grey-300 uppercase tracking-widest"
+            class="text-[14px] font-bold text-toss-grey-500 uppercase tracking-widest"
           >
             {kpi.label}
           </p>
           <h4
-            class="text-[32px] font-black text-toss-grey-600 mt-1 tracking-tight"
+            class="text-[34px] font-black text-toss-grey-800 mt-1 tracking-tighter"
           >
             {kpi.value}
           </h4>
@@ -367,25 +339,23 @@
     {/each}
   </header>
 
-  <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 px-4">
-    <!-- Area 2: Left Main Panel (To-Do & Trends) -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+    <!-- Area 2: Left Main Panel -->
     <main class="lg:col-span-8 space-y-10">
-      <!-- 2.1 금일 주요 업무 (Action-Oriented) -->
+      <!-- 2.1 Todo List (Improved Contrast) -->
       <section
         class="bg-white p-10 rounded-[48px] border border-toss-grey-100 shadow-sm space-y-8"
       >
         <div class="flex justify-between items-center">
           <h3
-            class="text-[22px] font-black text-toss-grey-600 flex items-center gap-3"
+            class="text-[22px] font-black text-toss-grey-700 flex items-center gap-3"
           >
-            <TrendingUp size={24} class="text-toss-blue" />
-            금일 현황 및 주요 업무
+            <TrendingUp size={24} class="text-toss-blue" /> 금일 업무 및 체크리스트
           </h3>
           <span
-            class="px-4 py-1.5 bg-toss-grey-50 text-toss-grey-400 text-[12px] font-black rounded-full border border-toss-grey-100"
+            class="px-4 py-1.5 bg-toss-grey-100 text-toss-grey-600 text-[12px] font-black rounded-full border border-toss-grey-200"
           >
-            오늘 <span class="text-toss-blue">{tasks.length}건</span>의 중요
-            체크사항
+            남은 업무 <span class="text-toss-blue">{tasks.length}건</span>
           </span>
         </div>
 
@@ -393,46 +363,42 @@
           {#each tasks as task, i}
             <a
               href={task.link}
-              class="flex items-center justify-between p-7 rounded-[32px] bg-toss-grey-50/50 hover:bg-white border border-transparent hover:border-toss-grey-100 hover:shadow-xl transition-all group"
-              in:fly={{ x: -20, delay: 200 + i * 100 }}
+              class="flex items-center justify-between p-7 rounded-[32px] bg-toss-grey-50 hover:bg-white border border-transparent hover:border-toss-grey-200 hover:shadow-xl transition-all group"
             >
               <div class="flex items-center gap-6">
                 <div
-                  class="w-14 h-14 rounded-3xl flex items-center justify-center {task.type ===
+                  class="w-14 h-14 rounded-[24px] flex items-center justify-center {task.type ===
                   'money'
                     ? 'bg-toss-blue/10 text-toss-blue'
                     : task.type === 'warning'
-                      ? 'bg-red-50 text-red-500'
-                      : 'bg-green-50 text-green-500'} transition-transform group-hover:scale-110"
+                      ? 'bg-red-50 text-red-600'
+                      : 'bg-green-50 text-green-600'}"
                 >
-                  {#if task.type === "money"}
-                    <CreditCard size={28} />
-                  {:else if task.type === "warning"}
-                    <AlertCircle size={28} />
-                  {:else}
-                    <UserCheck size={28} />
-                  {/if}
+                  {#if task.type === "money"}<CreditCard
+                      size={28}
+                    />{:else if task.type === "warning"}<AlertCircle
+                      size={28}
+                    />{:else}<UserCheck size={28} />{/if}
                 </div>
                 <div>
                   <div class="flex items-center gap-3">
-                    <h4 class="text-[19px] font-black text-toss-grey-600">
+                    <h4 class="text-[19px] font-black text-toss-grey-700">
                       {task.title}
                     </h4>
                     <span
                       class="px-2.5 py-0.5 rounded-lg {task.type === 'money'
                         ? 'bg-toss-blue text-white'
-                        : 'bg-red-500 text-white'} text-[11px] font-black"
+                        : 'bg-red-600 text-white'} text-[11px] font-black"
+                      >{task.badge}</span
                     >
-                      {task.badge}
-                    </span>
                   </div>
-                  <p class="text-[15px] font-bold text-toss-grey-300 mt-1">
+                  <p class="text-[15px] font-bold text-toss-grey-500 mt-1">
                     {task.desc}
                   </p>
                 </div>
               </div>
               <div
-                class="w-12 h-12 rounded-full flex items-center justify-center text-toss-grey-200 group-hover:bg-toss-blue group-hover:text-white transition-all"
+                class="w-12 h-12 rounded-full flex items-center justify-center text-toss-grey-300 group-hover:bg-toss-blue group-hover:text-white transition-all shadow-sm"
               >
                 <ChevronRight size={24} />
               </div>
@@ -441,106 +407,86 @@
         </div>
       </section>
 
-      <!-- 2.2 트렌드 시각화 (Mock Graphs) -->
+      <!-- 2.2 Graphs (Darker Labels) -->
       <section
         class="bg-white p-10 rounded-[48px] border border-toss-grey-100 shadow-sm space-y-8"
       >
         <div class="flex justify-between items-center">
           <h3
-            class="text-[20px] font-black text-toss-grey-600 flex items-center gap-3"
+            class="text-[20px] font-black text-toss-grey-700 flex items-center gap-3"
           >
-            <BarChart3 size={22} class="text-toss-blue" />
-            주간/월간 운영 트렌드
+            <BarChart3 size={22} class="text-toss-blue" /> 주간 운영 지표
           </h3>
-          <div class="flex gap-2 p-1 bg-toss-grey-50 rounded-xl">
-            <button
-              class="px-3 py-1.5 text-[11px] font-black rounded-lg bg-white shadow-sm text-toss-blue"
-              >최근 7일</button
-            >
-            <button
-              class="px-3 py-1.5 text-[11px] font-black rounded-lg text-toss-grey-300"
-              >최근 30일</button
-            >
-          </div>
         </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <!-- Graph 1: Placeholder -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+          <!-- Graph 1 -->
           <div
-            class="p-8 bg-toss-grey-50/50 rounded-[40px] border border-toss-grey-100 space-y-6"
+            class="p-8 bg-toss-grey-50 border border-toss-grey-100 rounded-[40px] space-y-8"
           >
             <p
-              class="text-[13px] font-black text-toss-grey-400 uppercase tracking-widest"
+              class="text-[13px] font-black text-toss-grey-600 uppercase tracking-widest pl-1"
             >
-              {role === "director"
-                ? "월별 수익 추이"
-                : role === "teacher"
-                  ? "과제 제출률"
-                  : "출결 성공률"}
+              활동 참여 지점
             </p>
             <div class="h-48 flex items-end gap-3 px-2">
-              {#each [40, 65, 55, 80, 75, 95, 70] as height, i}
-                <div class="flex-1 flex flex-col items-center gap-2 group">
+              {#each [40, 65, 55, 80, 75, 95, 70] as h, i}
+                <div class="flex-1 flex flex-col items-center gap-3 group">
                   <div
-                    class="w-full bg-toss-blue-light/50 rounded-t-xl hover:bg-toss-blue transition-all cursor-pointer relative"
-                    style="height: {height}%"
+                    class="w-full bg-toss-blue/20 rounded-t-xl hover:bg-toss-blue transition-all cursor-pointer relative shadow-sm"
+                    style="height: {h}%"
                   >
                     <div
-                      class="absolute -top-10 left-1/2 -translate-x-1/2 bg-toss-grey-600 text-white px-2 py-1 rounded text-[10px] font-black opacity-0 group-hover:opacity-100 transition-opacity"
+                      class="absolute -top-10 left-1/2 -translate-x-1/2 bg-toss-grey-900 text-white px-2 py-1 rounded text-[10px] font-black opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      {height}%
+                      {h}%
                     </div>
                   </div>
-                  <span class="text-[10px] font-bold text-toss-grey-200"
+                  <span class="text-[11px] font-black text-toss-grey-500"
                     >{i + 1}일</span
                   >
                 </div>
               {/each}
             </div>
           </div>
-
-          <!-- Graph 2: Placeholder -->
+          <!-- Graph 2 -->
           <div
-            class="p-8 bg-toss-grey-50/50 rounded-[40px] border border-toss-grey-100 space-y-6"
+            class="p-8 bg-toss-grey-50 border border-toss-grey-100 rounded-[40px] flex flex-col items-center justify-center space-y-6"
           >
             <p
-              class="text-[13px] font-black text-toss-grey-400 uppercase tracking-widest"
+              class="text-[13px] font-black text-toss-grey-600 uppercase tracking-widest w-full"
             >
-              {role === "director" ? "신규 등록생 비율" : "학생 만족도 커브"}
+              오늘의 성과 목표
             </p>
-            <div class="h-48 flex items-center justify-center">
-              <div class="relative w-36 h-36">
-                <svg viewBox="0 0 36 36" class="w-full h-full rotate-[-90deg]">
-                  <circle
-                    cx="18"
-                    cy="18"
-                    r="16"
-                    fill="none"
-                    class="stroke-toss-blue-light/50"
-                    stroke-width="4"
-                    stroke-dasharray="100 100"
-                  />
-                  <circle
-                    cx="18"
-                    cy="18"
-                    r="16"
-                    fill="none"
-                    class="stroke-toss-blue"
-                    stroke-width="4"
-                    stroke-dasharray="75 100"
-                    stroke-linecap="round"
-                  />
-                </svg>
-                <div
-                  class="absolute inset-0 flex flex-col items-center justify-center"
+            <div class="relative w-40 h-40">
+              <svg viewBox="0 0 36 36" class="w-full h-full rotate-[-90deg]">
+                <circle
+                  cx="18"
+                  cy="18"
+                  r="16"
+                  fill="none"
+                  class="stroke-toss-grey-200"
+                  stroke-width="4"
+                />
+                <circle
+                  cx="18"
+                  cy="18"
+                  r="16"
+                  fill="none"
+                  class="stroke-toss-blue"
+                  stroke-width="4"
+                  stroke-dasharray="75 100"
+                  stroke-linecap="round"
+                />
+              </svg>
+              <div
+                class="absolute inset-0 flex flex-col items-center justify-center"
+              >
+                <span class="text-[28px] font-black text-toss-grey-800"
+                  >75%</span
                 >
-                  <span class="text-[24px] font-black text-toss-grey-600"
-                    >75%</span
-                  >
-                  <span class="text-[10px] font-bold text-toss-grey-300"
-                    >Target 90%</span
-                  >
-                </div>
+                <span class="text-[11px] font-bold text-toss-grey-500 uppercase"
+                  >Target</span
+                >
               </div>
             </div>
           </div>
@@ -548,92 +494,87 @@
       </section>
     </main>
 
-    <!-- Area 3: Right Side Panel (Feed & Quick Actions) -->
+    <!-- Area 3: Right Side Panel -->
     <aside class="lg:col-span-4 space-y-10">
-      <!-- 3.1 실시간 피드 및 소통 -->
+      <!-- 3.1 Feed (High Contrast) -->
       <section
         class="bg-white p-10 rounded-[48px] border border-toss-grey-100 shadow-sm space-y-8"
       >
-        <div class="flex justify-between items-center">
-          <h3
-            class="text-[20px] font-black text-toss-grey-600 flex items-center gap-3"
-          >
-            <Activity size={22} class="text-toss-blue" />
-            실시간 피드
-          </h3>
-          <span class="relative flex h-3 w-3">
-            <span
-              class="animate-ping absolute inline-flex h-full w-full rounded-full bg-toss-blue opacity-75"
-            ></span>
-            <span class="relative inline-flex rounded-full h-3 w-3 bg-toss-blue"
-            ></span>
-          </span>
-        </div>
-
+        <h3
+          class="text-[20px] font-black text-toss-grey-700 flex items-center gap-3"
+        >
+          <Activity size={22} class="text-toss-blue" /> 실시간 피드
+        </h3>
         <div class="space-y-6">
-          {#each feed as item, i}
-            <div class="flex gap-4 group" in:fade={{ delay: 500 + i * 50 }}>
+          {#each feed as f}
+            <div class="flex gap-4 group">
               <div class="flex flex-col items-center">
                 <div
-                  class="w-2 h-2 rounded-full bg-toss-grey-100 group-hover:bg-toss-blue transition-colors mt-2"
+                  class="w-2.5 h-2.5 rounded-full bg-toss-grey-200 group-hover:bg-toss-blue transition-all mt-1.5 border-2 border-white shadow-sm"
                 ></div>
-                <div class="w-[1px] flex-1 bg-toss-grey-50 my-1"></div>
+                <div
+                  class="w-[2px] flex-1 bg-toss-grey-100 my-1 group-hover:bg-toss-blue/20 transition-all"
+                ></div>
               </div>
-              <div class="flex-1 pb-4">
-                <p class="text-[12px] font-bold text-toss-grey-300">
-                  {item.time}
+              <div
+                class="flex-1 pb-4 border-b border-toss-grey-50 group-last:border-none"
+              >
+                <p class="text-[12px] font-black text-toss-grey-400">
+                  {f.time}
                 </p>
                 <p
-                  class="text-[14px] font-black text-toss-grey-600 mt-0.5 group-hover:text-toss-blue transition-colors"
+                  class="text-[14px] font-bold text-toss-grey-700 mt-1 leading-relaxed group-hover:text-toss-blue transition-colors"
                 >
-                  {item.msg}
+                  {f.msg}
                 </p>
               </div>
             </div>
           {/each}
         </div>
-
-        <button
-          class="w-full h-14 bg-toss-grey-50 text-toss-grey-400 font-black text-[14px] rounded-2xl border border-toss-grey-100 hover:bg-white hover:text-toss-blue hover:border-toss-blue transition-all"
-        >
-          전체 활동 로그 보기
-        </button>
       </section>
 
-      <!-- 3.2 빠른 실행 버튼 -->
+      <!-- 3.2 Quick Actions (Dark Mode with High Contrast Text) -->
       <section
-        class="bg-toss-grey-800 p-10 rounded-[48px] shadow-2xl space-y-8 relative overflow-hidden"
+        class="bg-toss-grey-900 p-10 rounded-[48px] shadow-2xl relative overflow-hidden ring-1 ring-white/10"
       >
-        <Zap
-          size={100}
-          class="absolute -right-8 -bottom-8 text-white/5 rotate-12"
-        />
-
-        <h3
-          class="text-[20px] font-black text-white flex items-center gap-3 relative z-10"
-        >
-          <Zap size={22} class="text-toss-blue" />
-          빠른 실행 (Quick)
-        </h3>
-
-        <div class="grid grid-cols-2 gap-4 relative z-10">
-          {#each quickActions as action}
-            <a
-              href={action.link}
-              class="bg-white/10 hover:bg-white/20 border border-white/5 p-6 rounded-[32px] flex flex-col items-center gap-4 transition-all hover:-translate-y-1 group"
+        <div
+          class="absolute -right-20 -top-20 w-64 h-64 bg-toss-blue/30 rounded-full blur-[100px] pointer-events-none"
+        ></div>
+        <div class="relative z-10 space-y-8">
+          <div class="space-y-2">
+            <h3
+              class="text-[22px] font-black text-white flex items-center gap-3"
             >
               <div
-                class="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-toss-blue group-hover:bg-toss-blue group-hover:text-white transition-all"
+                class="w-10 h-10 rounded-xl bg-toss-blue/30 flex items-center justify-center text-toss-blue border border-toss-blue/20"
               >
-                <action.icon size={24} />
+                <Zap size={22} fill="currentColor" />
               </div>
-              <span
-                class="text-[13px] font-black text-white text-center leading-tight"
+              빠른 실행
+            </h3>
+            <p class="text-[14px] font-bold text-toss-grey-400 pl-1">
+              자주 쓰는 기능을 즉시 호출하세요.
+            </p>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            {#each quickActions as action}
+              <a
+                href={action.link}
+                class="bg-white/10 hover:bg-toss-blue border border-white/5 p-7 rounded-[32px] flex flex-col items-center gap-4 transition-all hover:-translate-y-2 group shadow-xl"
               >
-                {action.label}
-              </span>
-            </a>
-          {/each}
+                <div
+                  class="w-14 h-14 rounded-[22px] bg-white/10 flex items-center justify-center text-toss-blue group-hover:bg-white group-hover:text-toss-blue transition-all shadow-inner"
+                >
+                  <action.icon size={28} strokeWidth={2.5} />
+                </div>
+                <span
+                  class="text-[14px] font-black text-white text-center leading-tight"
+                >
+                  {action.label}
+                </span>
+              </a>
+            {/each}
+          </div>
         </div>
       </section>
     </aside>
@@ -642,6 +583,6 @@
 
 <style>
   :global(body) {
-    background-color: #f9fafb;
+    background-color: #f7f9fc;
   }
 </style>

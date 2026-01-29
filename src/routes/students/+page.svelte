@@ -419,9 +419,9 @@
   >
     <div class="overflow-x-auto">
       <table class="w-full text-left border-collapse whitespace-nowrap">
-        <thead class="bg-toss-grey-25 border-b border-toss-grey-50">
+        <thead class="bg-toss-grey-50 border-b border-toss-grey-100">
           <tr
-            class="text-[12px] font-black text-toss-grey-400 uppercase tracking-tight"
+            class="text-[12px] font-black text-toss-grey-600 uppercase tracking-tight"
           >
             <th class="w-[60px] p-4 text-center">
               <input
@@ -433,7 +433,7 @@
                     selectedIds = filteredStudents.map((s) => s.id);
                   else selectedIds = [];
                 }}
-                class="w-4 h-4 rounded-md border-toss-grey-100 text-toss-blue focus:ring-toss-blue/20 transition-all cursor-pointer"
+                class="w-4 h-4 rounded-md border-toss-grey-200 text-toss-blue focus:ring-toss-blue/20 transition-all cursor-pointer"
               />
             </th>
             <th class="w-[140px] p-4">이름</th>
@@ -496,10 +496,10 @@
                 </td>
                 <td class="w-[140px] p-4">
                   <div class="flex flex-col gap-0.5">
-                    <span class="text-[14px] font-black text-toss-grey-600"
+                    <span class="text-[14px] font-black text-toss-grey-800"
                       >{s.school}</span
                     >
-                    <span class="text-[11px] font-bold text-toss-grey-300"
+                    <span class="text-[11px] font-bold text-toss-grey-500"
                       >{s.grade}</span
                     >
                   </div>
@@ -507,9 +507,9 @@
                 <td class="w-[180px] p-4">
                   <div class="flex flex-col gap-0.5">
                     <div
-                      class="flex items-center gap-2 text-[13px] font-bold text-toss-grey-450"
+                      class="flex items-center gap-2 text-[13px] font-bold text-toss-grey-600"
                     >
-                      <Phone size={12} class="text-toss-grey-200" />
+                      <Phone size={12} class="text-toss-grey-400" />
                       <span>{s.studentPhone}</span>
                     </div>
                     {#if s.parentContacts.find((p) => p.isPrimary)}
@@ -517,13 +517,13 @@
                         (p) => p.isPrimary,
                       )}
                       <div
-                        class="text-[11px] font-bold text-toss-grey-300 flex items-center gap-1.5 px-0.5"
+                        class="text-[11px] font-bold text-toss-grey-500 flex items-center gap-1.5 px-0.5"
                       >
                         <div
-                          class="w-1 h-1 rounded-full bg-toss-grey-100"
+                          class="w-1 h-1 rounded-full bg-toss-grey-300"
                         ></div>
                         {primary?.phone}
-                        <span class="text-[10px] text-toss-grey-200 font-medium"
+                        <span class="text-[10px] text-toss-grey-500 font-medium"
                           >({primary?.type})</span
                         >
                       </div>
@@ -532,7 +532,7 @@
                 </td>
                 <td class="w-[200px] p-4">
                   <p
-                    class="text-[13px] font-medium text-toss-grey-400 truncate max-w-[180px]"
+                    class="text-[13px] font-medium text-toss-grey-600 truncate max-w-[180px]"
                     title={s.memo}
                   >
                     {s.memo || "-"}
@@ -556,12 +556,12 @@
                   </div>
                 </td>
                 <td class="w-[120px] p-4 text-center">
-                  <span class="text-[13px] font-bold text-toss-grey-400"
+                  <span class="text-[13px] font-bold text-toss-grey-600"
                     >{s.recentAttendance || "-"}</span
                   >
                 </td>
                 <td class="w-[120px] p-4 text-center">
-                  <span class="text-[13px] font-bold text-toss-grey-400"
+                  <span class="text-[13px] font-bold text-toss-grey-600"
                     >{s.lastConsultationDate || "-"}</span
                   >
                 </td>

@@ -171,15 +171,15 @@
 
   <!-- Stats Dashboard -->
   <div class="grid grid-cols-4 gap-6 px-2">
-    {#each [{ label: "대상", value: stats.total, color: "text-toss-grey-400", bg: "bg-white" }, { label: "출석", value: stats.present, color: "text-toss-blue", bg: "bg-blue-50/30" }, { label: "지각/미등원", value: stats.late, color: "text-orange-500", bg: "bg-orange-50/30" }, { label: "결석", value: stats.absent, color: "text-red-500", bg: "bg-red-50/30" }] as s}
+    {#each [{ label: "대상", value: stats.total, color: "text-toss-grey-600", bg: "bg-white" }, { label: "출석", value: stats.present, color: "text-toss-blue", bg: "bg-blue-50/40" }, { label: "지각/미등원", value: stats.late, color: "text-orange-600", bg: "bg-orange-50/40" }, { label: "결석", value: stats.absent, color: "text-red-600", bg: "bg-red-50/40" }] as s}
       <div
-        class="{s.bg} p-8 rounded-[40px] border border-toss-grey-100 shadow-sm transition-all hover:shadow-lg"
+        class="{s.bg} p-8 rounded-[40px] border border-toss-grey-200 shadow-sm transition-all hover:shadow-lg"
       >
         <p class="text-[12px] font-black {s.color} uppercase tracking-widest">
           {s.label}
         </p>
-        <h4 class="text-[34px] font-black text-toss-grey-600 mt-2">
-          {s.value}<span class="text-[16px] text-toss-grey-300 ml-1">명</span>
+        <h4 class="text-[34px] font-black text-toss-grey-800 mt-2">
+          {s.value}<span class="text-[16px] text-toss-grey-500 ml-1">명</span>
         </h4>
       </div>
     {/each}
@@ -190,7 +190,7 @@
     <!-- class Sidebar -->
     <aside class="w-80 shrink-0 space-y-4">
       <h3
-        class="text-[13px] font-black text-toss-grey-300 uppercase tracking-[0.2em] pl-4"
+        class="text-[13px] font-black text-toss-grey-600 uppercase tracking-[0.2em] pl-4"
       >
         강의 선택
       </h3>

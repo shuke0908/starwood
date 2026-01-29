@@ -206,7 +206,7 @@
       class="px-8 py-3 rounded-2xl text-[15px] font-black transition-all {activeTab ===
       'deposits'
         ? 'bg-white shadow-sm text-toss-blue'
-        : 'text-toss-grey-400 hover:text-toss-grey-600'}">통장 자동 매칭</button
+        : 'text-toss-grey-600 hover:text-toss-blue'}">통장 자동 매칭</button
     >
   </div>
 
@@ -237,7 +237,7 @@
           <table class="w-full">
             <thead class="bg-toss-grey-50">
               <tr
-                class="text-[11px] font-black text-toss-grey-400 uppercase tracking-widest px-8"
+                class="text-[11px] font-black text-toss-grey-600 uppercase tracking-widest px-8"
               >
                 <th class="py-2.5 px-10 text-left">원생명 / 연락처</th>
                 <th class="py-2.5 px-8 text-left">수강 중인 클래스</th>
@@ -265,7 +265,7 @@
                         >
                           {s.name}
                         </p>
-                        <p class="text-[11px] font-bold text-toss-grey-300">
+                        <p class="text-[11px] font-bold text-toss-grey-500">
                           {s.studentPhone}
                         </p>
                       </div>
@@ -367,10 +367,10 @@
               {selectedStudent.name[0]}
             </div>
             <div>
-              <h3 class="text-[24px] font-black text-toss-grey-600">
+              <h3 class="text-[24px] font-black text-toss-grey-800">
                 {selectedStudent.name} 원생
               </h3>
-              <p class="text-toss-grey-400 font-bold">
+              <p class="text-toss-grey-600 font-bold">
                 미수금 ₩{fmt(selectedStudent.unpaid)}
               </p>
             </div>

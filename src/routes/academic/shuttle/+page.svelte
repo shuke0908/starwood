@@ -153,21 +153,21 @@
           class="px-8 py-3 rounded-[18px] font-black text-[15px] transition-all whitespace-nowrap {activeTab ===
           'vehicles'
             ? 'bg-white shadow-md text-toss-blue'
-            : 'text-toss-grey-400 hover:text-toss-grey-600'}">차량 현황</button
+            : 'text-toss-grey-600 hover:text-toss-blue'}">차량 현황</button
         >
         <button
           onclick={() => (activeTab = "drivers")}
           class="px-8 py-3 rounded-[18px] font-black text-[15px] transition-all whitespace-nowrap {activeTab ===
           'drivers'
             ? 'bg-white shadow-md text-toss-blue'
-            : 'text-toss-grey-400 hover:text-toss-grey-600'}">기사 관리</button
+            : 'text-toss-grey-600 hover:text-toss-blue'}">기사 관리</button
         >
         <button
           onclick={() => (activeTab = "routes")}
           class="px-8 py-3 rounded-[18px] font-black text-[15px] transition-all whitespace-nowrap {activeTab ===
           'routes'
             ? 'bg-white shadow-md text-toss-blue'
-            : 'text-toss-grey-400 hover:text-toss-grey-600'}">노선/배차</button
+            : 'text-toss-grey-600 hover:text-toss-blue'}">노선/배차</button
         >
       </div>
     </div>
@@ -193,7 +193,7 @@
             class="bg-toss-grey-25 border-b border-toss-grey-50 sticky top-0 z-10"
           >
             <tr
-              class="text-[12px] font-black text-toss-grey-400 uppercase tracking-tight"
+              class="text-[12px] font-black text-toss-grey-600 uppercase tracking-tight"
             >
               <th class="p-6 pl-10">차량번호</th>
               <th class="p-6">차종 / 모델</th>
