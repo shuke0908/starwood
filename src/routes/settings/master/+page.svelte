@@ -1,5 +1,6 @@
 <script lang="ts">
   import { settings } from "$lib/settings.svelte";
+  import { toast } from "$lib/stores/toast.svelte";
   import { fade, fly, slide, scale } from "svelte/transition";
   import {
     Building2,
@@ -60,6 +61,34 @@
       description: "",
     });
   }
+
+  function deleteRoom(id: string) {
+    if (confirm("강의실을 삭제하시겠습니까?")) {
+      settings.data.roomSettings = settings.data.roomSettings.filter(
+        (r) => r.id !== id,
+      );
+    }
+  }
+
+  function deleteProduct(id: string) {
+    if (confirm("수강 상품을 삭제하시겠습니까?")) {
+      settings.data.products = settings.data.products.filter(
+        (p) => p.id !== id,
+      );
+    }
+  }
+
+  function deleteDiscount(id: string) {
+    if (confirm("할인 정책을 삭제하시겠습니까?")) {
+      settings.data.discounts = settings.data.discounts.filter(
+        (d) => d.id !== id,
+      );
+    }
+  }
+
+  function saveAll() {
+    toast.show("모든 변경사항이 자동으로 동기화되었습니다.", "success");
+  }
 </script>
 
 <div class="max-w-[1200px] mx-auto space-y-10 pb-20">
@@ -78,6 +107,7 @@
         >전체 백업</button
       >
       <button
+        onclick={saveAll}
         class="toss-btn-primary px-8 flex items-center gap-2 shrink-0 whitespace-nowrap"
       >
         <Save size={20} /> 모든 변경사항 저장
@@ -129,6 +159,7 @@
                   <MapPin size={24} />
                 </div>
                 <button
+                  onclick={() => deleteRoom(room.id)}
                   class="text-toss-grey-100 hover:text-red-500 transition-colors"
                 >
                   <Trash2 size={20} />
@@ -238,6 +269,7 @@
                   </div>
                 </div>
                 <button
+                  onclick={() => deleteProduct(prod.id)}
                   class="p-2 text-toss-grey-100 hover:text-red-500 transition-colors"
                 >
                   <Trash2 size={20} />
@@ -271,6 +303,7 @@
                   {disc.type === "amount" ? "정액 할인" : "정률 할인"}
                 </div>
                 <button
+                  onclick={() => deleteDiscount(disc.id)}
                   class="text-toss-grey-100 hover:text-red-500 transition-colors"
                 >
                   <Trash2 size={20} />

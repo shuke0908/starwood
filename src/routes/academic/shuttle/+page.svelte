@@ -55,7 +55,75 @@
   function openDetail(id: string) {
     selectedId = id;
     isDrawerOpen = true;
+    isEditing = false;
   }
+
+  function addItem() {
+    if (activeTab === "vehicles") {
+      const newVehicle = {
+        id: `vh_${Date.now()}`,
+        plate: "신규-0000",
+        model: "현대 카운티",
+        driverId: "",
+        mileage: 0,
+        status: "정상" as const,
+        lastCheck: new Date().toISOString().split("T")[0],
+      };
+      settings.data.shuttleVehicles.unshift(newVehicle);
+      openDetail(newVehicle.id);
+    } else if (activeTab === "drivers") {
+      const newDriver = {
+        id: `dr_${Date.now()}`,
+        name: "신규 기사님",
+        phone: "010-0000-0000",
+        salary: 2500000,
+        joinDate: new Date().toISOString().split("T")[0],
+        status: "대기" as const,
+        isOnHoliday: false,
+        availability: [
+          { day: "월", startTime: "08:00", endTime: "18:00" },
+          { day: "화", startTime: "08:00", endTime: "18:00" },
+          { day: "수", startTime: "08:00", endTime: "18:00" },
+          { day: "목", startTime: "08:00", endTime: "18:00" },
+          { day: "금", startTime: "08:00", endTime: "18:00" },
+        ],
+      };
+      settings.data.shuttleDrivers.unshift(newDriver as any);
+      openDetail(newDriver.id);
+    } else {
+      const newRoute = {
+        id: `rt_${Date.now()}`,
+        name: "신규 노선",
+        stops: 5,
+        studentCount: 0,
+        startTime: "08:00",
+        endTime: "09:00",
+      };
+      settings.data.shuttleRoutes.unshift(newRoute);
+      openDetail(newRoute.id);
+    }
+    isEditing = true;
+  }
+
+  function deleteItem(id: string) {
+    if (!confirm("정말로 삭제하시겠습니까?")) return;
+    if (activeTab === "vehicles") {
+      settings.data.shuttleVehicles = settings.data.shuttleVehicles.filter(
+        (v) => v.id !== id,
+      );
+    } else if (activeTab === "drivers") {
+      settings.data.shuttleDrivers = settings.data.shuttleDrivers.filter(
+        (d) => d.id !== id,
+      );
+    } else {
+      settings.data.shuttleRoutes = settings.data.shuttleRoutes.filter(
+        (r) => r.id !== id,
+      );
+    }
+    isDrawerOpen = false;
+  }
+
+  let isEditing = $state(false);
 
   const fmt = (val?: number) => (val ? val.toLocaleString() : "0");
 </script>
@@ -105,6 +173,7 @@
     </div>
 
     <button
+      onclick={addItem}
       class="toss-btn-primary flex items-center gap-2 px-8 h-[64px] rounded-[24px] shadow-lg shadow-toss-blue/10 hover:scale-[1.02] active:scale-[0.98] transition-all font-black text-[16px] whitespace-nowrap shrink-0"
     >
       <Plus size={22} class="stroke-[3]" />
@@ -352,7 +421,18 @@
           <div
             class="bg-white p-6 rounded-2xl shadow-sm text-[22px] font-black text-toss-grey-700"
           >
-            {(selectedItem as any).plate || (selectedItem as any).name}
+            {#if isEditing}
+              <input
+                bind:value={
+                  (selectedItem as any)[
+                    activeTab === "vehicles" ? "plate" : "name"
+                  ]
+                }
+                class="w-full bg-transparent border-none outline-none focus:text-toss-blue"
+              />
+            {:else}
+              {(selectedItem as any).plate || (selectedItem as any).name}
+            {/if}
           </div>
         </div>
 
@@ -410,15 +490,18 @@
 
       <footer class="pt-6 flex gap-4">
         <button
-          onclick={() => (isDrawerOpen = false)}
+          onclick={() => deleteItem(selectedItem.id)}
           class="w-16 h-16 rounded-3xl bg-red-50 text-red-400 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"
         >
           <Trash2 size={24} />
         </button>
         <button
-          class="flex-1 h-16 bg-toss-grey-800 text-white rounded-[28px] font-black text-[18px]"
+          onclick={() => (isEditing = !isEditing)}
+          class="flex-1 h-16 {isEditing
+            ? 'bg-toss-blue'
+            : 'bg-toss-grey-800'} text-white rounded-[28px] font-black text-[18px] transition-all"
         >
-          수정 모드로 전환
+          {isEditing ? "수정 완료" : "상세 정보 수정"}
         </button>
       </footer>
     </div>

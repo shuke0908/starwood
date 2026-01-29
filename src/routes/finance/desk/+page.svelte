@@ -1,5 +1,6 @@
 <script lang="ts">
   import { settings } from "$lib/settings.svelte";
+  import { toast } from "$lib/stores/toast.svelte";
   import type { PaymentRecord, Student } from "$lib/types";
   import { MOCK_DEPOSITS } from "$lib/mock-data";
   import {
@@ -87,6 +88,24 @@
     { date: "2026-01-01", name: "신정", deduct: true },
     { date: "2026-01-28", name: "설날 연휴", deduct: true },
   ];
+
+  function showHistory() {
+    toast.show("전체 수납 이력을 불러옵니다.", "info");
+  }
+
+  function sendBulkReminders() {
+    if (
+      confirm(
+        `${unpaidStudents.length}명의 미납 학생 보호자에게 알림톡을 발송하시겠습니까?`,
+      )
+    ) {
+      toast.show(
+        "알림톡 발송 예약 완료",
+        "success",
+        "카카오 알림톡 서버로 전송되었습니다.",
+      );
+    }
+  }
 </script>
 
 <div class="max-w-[1600px] mx-auto space-y-10 pb-20 px-4">
@@ -99,11 +118,13 @@
     </div>
     <div class="flex gap-4 shrink-0">
       <button
+        onclick={showHistory}
         class="toss-btn-secondary px-8 flex items-center gap-2 whitespace-nowrap shrink-0"
       >
         <History size={18} /> 전체 수납 이력
       </button>
       <button
+        onclick={sendBulkReminders}
         class="toss-btn-primary px-8 flex items-center gap-2 shadow-lg shadow-toss-blue/20 whitespace-nowrap shrink-0"
       >
         <Send size={18} /> 미납 알림톡 일괄 발송

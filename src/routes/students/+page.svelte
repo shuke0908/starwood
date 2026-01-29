@@ -1319,8 +1319,12 @@
       </h4>
       <div class="grid grid-cols-2 gap-4">
         <div class="space-y-2">
-          <label class="text-[12px] font-black text-toss-grey-400">이름</label>
+          <label
+            for="student-name"
+            class="text-[12px] font-black text-toss-grey-400">이름</label
+          >
           <input
+            id="student-name"
             bind:value={editingStudent.name}
             class="toss-input"
             placeholder="이름 입력"
@@ -1344,10 +1348,12 @@
         </div>
       </div>
       <div class="space-y-2">
-        <label class="text-[12px] font-black text-toss-grey-400"
-          >학생 연락처</label
+        <label
+          for="student-phone"
+          class="text-[12px] font-black text-toss-grey-400">학생 연락처</label
         >
         <input
+          id="student-phone"
           bind:value={editingStudent.studentPhone}
           class="toss-input"
           placeholder="010-0000-0000"
@@ -1437,16 +1443,27 @@
       </h4>
       <div class="grid grid-cols-2 gap-4">
         <div class="space-y-2">
-          <label class="text-[12px] font-black text-toss-grey-400">학교</label>
+          <label
+            for="student-school"
+            class="text-[12px] font-black text-toss-grey-400">학교</label
+          >
           <input
+            id="student-school"
             bind:value={editingStudent.school}
             class="toss-input"
             placeholder="학교명"
           />
         </div>
         <div class="space-y-2">
-          <label class="text-[12px] font-black text-toss-grey-400">학년</label>
-          <select bind:value={editingStudent.grade} class="toss-input">
+          <label
+            for="student-grade"
+            class="text-[12px] font-black text-toss-grey-400">학년</label
+          >
+          <select
+            id="student-grade"
+            bind:value={editingStudent.grade}
+            class="toss-input"
+          >
             {#each settings.data.academy.gradeSystem as g}
               <option value={g}>{g}</option>
             {/each}
