@@ -112,12 +112,39 @@
   );
 
   const detailTabs = [
-    { id: "info", label: "종합 정보" },
+    { id: "info", label: "기본 정보" },
+    { id: "record", label: "수강 이력" },
     { id: "payment", label: "수납 내역" },
-    { id: "consult", label: "상담 이력" },
-    { id: "score", label: "성적/과제" },
-    { id: "attendance", label: "출결 기록" },
+    { id: "consult", label: "상담 기록" },
+    { id: "score", label: "성적/출결" },
   ];
+
+  function changeStudentStatus(id: string, newStatus: string) {
+    const student = settings.data.students.find((s) => s.id === id);
+    if (student) {
+      const oldStatus = student.status;
+      student.status = newStatus as any;
+
+      // 워크플로우: 대기 -> 재원 전환 시 수강료 청구서(초안) 자동 생성
+      if (oldStatus === "대기" && newStatus === "재원") {
+        const defaultAmount = 350000;
+        settings.data.payments.unshift({
+          id: `pay_draft_${Date.now()}`,
+          studentId: student.id,
+          amount: defaultAmount,
+          method: "이체",
+          type: "이체",
+          description: `입학 확정 자동 청구 (${student.name})`,
+          date: new Date().toISOString().split("T")[0],
+          status: "completed", // 데모용으로 즉시 완료 처리 또는 별도 상태 관리
+        });
+        toast.show(
+          `${student.name} 원생의 입학 확정 및 수강료(₩${fmt(defaultAmount)}) 청구서가 자동 생성되었습니다.`,
+          "success",
+        );
+      }
+    }
+  }
 
   function openDetail(id: string) {
     selectedStudentId = id;
@@ -245,7 +272,7 @@
   <!-- Enhanced Filters & Actions -->
   <div class="flex gap-6 items-center justify-between">
     <div class="flex gap-6 items-center flex-1">
-      <div class="relative w-[500px] group flex items-center">
+      <div class="relative max-w-[500px] w-full group flex items-center">
         <Search
           class="absolute left-6 text-toss-grey-300 group-focus-within:text-toss-blue transition-colors pointer-events-none"
           size={24}
@@ -259,10 +286,10 @@
       </div>
       <div class="flex gap-2">
         <!-- Status Filter -->
-        <div class="relative group">
+        <div class="relative group shrink-0">
           <select
             bind:value={filterStatus}
-            class="appearance-none pl-5 pr-10 h-[56px] rounded-[20px] bg-white border border-toss-grey-50 text-[15px] font-black text-toss-grey-500 hover:bg-toss-grey-50 transition-all shadow-sm outline-none cursor-pointer"
+            class="appearance-none pl-5 pr-10 h-[56px] rounded-[20px] bg-white border border-toss-grey-50 text-[15px] font-black text-toss-grey-500 hover:bg-toss-grey-50 transition-all shadow-sm outline-none cursor-pointer whitespace-nowrap"
           >
             <option value="전체">상태</option>
             {#each ["재원", "미납", "휴원", "신규", "퇴원"] as s}
@@ -276,7 +303,7 @@
         </div>
 
         <!-- School Filter -->
-        <div class="relative group">
+        <div class="relative group shrink-0">
           <select
             bind:value={filterSchool}
             class="appearance-none pl-5 pr-10 h-[56px] rounded-[20px] bg-white border border-toss-grey-50 text-[15px] font-black text-toss-grey-500 hover:bg-toss-grey-50 transition-all shadow-sm outline-none cursor-pointer"
@@ -293,7 +320,7 @@
         </div>
 
         <!-- Grade Filter -->
-        <div class="relative group">
+        <div class="relative group shrink-0">
           <select
             bind:value={filterGrade}
             class="appearance-none pl-5 pr-10 h-[56px] rounded-[20px] bg-white border border-toss-grey-50 text-[15px] font-black text-toss-grey-500 hover:bg-toss-grey-50 transition-all shadow-sm outline-none cursor-pointer"
@@ -328,24 +355,24 @@
       </div>
     </div>
 
-    <div class="flex items-center gap-4">
+    <div class="flex items-center gap-4 shrink-0">
       <!-- Bulk Action Bar (Internal) -->
       {#if selectedIds.length > 0}
         <div
           class="flex items-center gap-4 bg-toss-grey-50 px-5 h-[56px] rounded-[20px] border border-toss-grey-100 animate-in fade-in zoom-in-95 duration-200"
         >
-          <p class="text-[14px] font-black whitespace-nowrap">
+          <p class="text-[14px] font-black whitespace-nowrap shrink-0">
             <span class="text-toss-blue">{selectedIds.length}명</span> 선택됨
           </p>
           <div class="h-4 w-[1px] bg-toss-grey-200"></div>
           <div class="flex gap-3">
             <button
-              class="flex items-center gap-1.5 text-[13px] font-bold text-toss-grey-500 hover:text-toss-blue transition-colors"
+              class="flex items-center gap-1.5 text-[13px] font-bold text-toss-grey-500 hover:text-toss-blue transition-colors whitespace-nowrap shrink-0"
             >
               <MessageSquare size={16} /> 메시지
             </button>
             <button
-              class="flex items-center gap-1.5 text-[13px] font-bold text-toss-grey-500 hover:text-red-500 transition-colors"
+              class="flex items-center gap-1.5 text-[13px] font-bold text-toss-grey-500 hover:text-red-500 transition-colors whitespace-nowrap shrink-0"
               onclick={() => {
                 if (
                   confirm(
@@ -373,13 +400,13 @@
 
       <button
         onclick={openPromotion}
-        class="px-5 h-[56px] rounded-[20px] bg-white border border-toss-grey-100 text-[15px] font-black text-toss-grey-500 hover:bg-toss-grey-50 transition-all shadow-sm flex items-center gap-2"
+        class="px-5 h-[56px] rounded-[20px] bg-white border border-toss-grey-100 text-[15px] font-black text-toss-grey-500 hover:bg-toss-grey-50 transition-all shadow-sm flex items-center gap-2 whitespace-nowrap shrink-0"
       >
         <TrendingUp size={18} class="text-toss-blue" /> 학년/진급 관리
       </button>
       <button
         onclick={startNewStudent}
-        class="toss-btn-primary flex items-center gap-2 px-8 h-[56px] rounded-[20px] shadow-lg shadow-toss-blue/10 hover:scale-[1.02] active:scale-[0.98] transition-all whitespace-nowrap"
+        class="toss-btn-primary flex items-center gap-2 px-8 h-[56px] rounded-[20px] shadow-lg shadow-toss-blue/10 hover:scale-[1.02] active:scale-[0.98] transition-all whitespace-nowrap shrink-0"
       >
         <Plus size={20} class="stroke-[3]" /> 학생 등록
       </button>
@@ -416,7 +443,7 @@
             <th class="p-4">수강 클래스</th>
             <th class="w-[120px] p-4 text-center">최근 출결</th>
             <th class="w-[120px] p-4 text-center">최근 상담일</th>
-            <th class="text-right w-[160px] p-4 pr-10">결제 및 상태</th>
+            <th class="text-right w-[140px] p-4 pr-10">납부 상태</th>
           </tr>
         </thead>
       </table>
@@ -515,14 +542,14 @@
                   <div class="flex flex-wrap gap-1">
                     {#each s.classes.slice(0, 3) as cls}
                       <span
-                        class="px-2.5 py-0.5 rounded-md bg-toss-grey-25 border border-toss-grey-50 text-[11px] font-black text-toss-grey-500 hover:bg-white hover:border-toss-blue hover:text-toss-blue transition-all cursor-default"
+                        class="px-2.5 py-1 rounded-lg bg-toss-blue/[0.08] border border-toss-blue/10 text-[11px] font-black text-toss-blue hover:bg-toss-blue hover:text-white transition-all cursor-default"
                       >
                         {cls}
                       </span>
                     {/each}
                     {#if s.classes.length > 3}
                       <span
-                        class="text-[10px] font-black text-toss-grey-200 ml-0.5"
+                        class="text-[10px] font-black text-toss-blue/40 ml-1"
                         >+{s.classes.length - 3}</span
                       >
                     {/if}
@@ -538,33 +565,23 @@
                     >{s.lastConsultationDate || "-"}</span
                   >
                 </td>
-                <td class="text-right w-[160px] p-4 pr-10">
-                  <div class="flex flex-col items-end gap-0.5">
-                    <div class="flex items-center gap-1.5">
-                      <div
-                        class="w-1.5 h-1.5 rounded-full {s.status === '재원'
-                          ? 'bg-toss-blue'
-                          : s.status === '미납'
-                            ? 'bg-red-500'
-                            : 'bg-toss-grey-300'}"
-                      ></div>
-                      <span
-                        class="text-[12px] font-black {s.status === '재원'
-                          ? 'text-toss-blue'
-                          : s.status === '미납'
-                            ? 'text-red-500'
-                            : 'text-toss-grey-400'}"
-                      >
-                        {s.status}
-                      </span>
-                    </div>
-                    <div
-                      class="text-[14px] font-black {s.status === '미납'
-                        ? 'text-red-500'
-                        : 'text-toss-grey-600'}"
+                <td class="text-right w-[140px] p-4 pr-10">
+                  <div class="flex flex-col items-end gap-1">
+                    <span
+                      class="px-3 py-1.5 rounded-full text-[11px] font-black transition-all {s.status ===
+                      '재원'
+                        ? 'bg-toss-blue/10 text-toss-blue'
+                        : s.status === '미납'
+                          ? 'bg-red-50 text-red-500 animate-pulse'
+                          : 'bg-toss-grey-50 text-toss-grey-400'}"
                     >
-                      {fmt(s.status === "미납" ? s.unpaid : 350000)}원
-                    </div>
+                      {s.status === "재원" ? "납부완료" : s.status}
+                    </span>
+                    {#if s.unpaid > 0}
+                      <span class="text-[12px] font-black text-red-500"
+                        >₩{fmt(s.unpaid)}</span
+                      >
+                    {/if}
                   </div>
                 </td>
               </tr>
@@ -597,6 +614,11 @@
               <select
                 id="student-status-edit"
                 bind:value={editingStudent.status}
+                onchange={(e) =>
+                  changeStudentStatus(
+                    editingStudent.id!,
+                    (e.target as HTMLSelectElement).value,
+                  )}
                 class="w-full bg-transparent border-none font-black text-toss-blue text-[18px] outline-none cursor-pointer"
               >
                 <option value="재원">재원</option>
@@ -835,6 +857,52 @@
             </button>
           </footer>
         </div>
+      {:else if activeTab === "record"}
+        <div class="space-y-6 h-full overflow-y-auto pr-2" in:fade>
+          <div class="grid grid-cols-1 gap-4">
+            {#each selectedStudent.classes as clsName}
+              {@const cls = settings.data.classes.find(
+                (c) => c.name === clsName,
+              )}
+              <div
+                class="p-6 bg-white border border-toss-grey-100 rounded-[32px] flex justify-between items-center group hover:border-toss-blue/30 transition-all shadow-sm"
+              >
+                <div class="flex items-center gap-5">
+                  <div
+                    class="w-14 h-14 rounded-2xl bg-toss-blue/5 text-toss-blue flex items-center justify-center font-black text-[20px]"
+                  >
+                    {clsName[0]}
+                  </div>
+                  <div>
+                    <p class="text-[17px] font-black text-toss-grey-600">
+                      {clsName}
+                    </p>
+                    <p class="text-[13px] font-bold text-toss-grey-300">
+                      {cls?.day?.join(", ") || "요일 미정"} | {cls?.time ||
+                        "시간 미정"}
+                    </p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <p class="text-[15px] font-black text-toss-blue">
+                    ₩{fmt(cls?.fee || 350000)}
+                  </p>
+                  <p class="text-[12px] font-bold text-toss-grey-300">
+                    {cls?.billingType === "flat" ? "월정액" : "회수제"}
+                  </p>
+                </div>
+              </div>
+            {:else}
+              <div
+                class="py-20 text-center bg-toss-grey-50 rounded-[40px] border border-dashed border-toss-grey-100"
+              >
+                <p class="text-toss-grey-300 font-bold">
+                  등록된 수강 정보가 없습니다.
+                </p>
+              </div>
+            {/each}
+          </div>
+        </div>
       {:else if activeTab === "payment"}
         <div class="space-y-6 h-full overflow-y-auto pr-2" in:fade>
           <div
@@ -1023,7 +1091,7 @@
                 <div class="flex flex-wrap gap-2">
                   {#each ["미납", "성적", "출결", "태도"] as tag}
                     <button
-                      class="px-3 py-1.5 rounded-xl bg-white border border-toss-grey-100 text-[11px] font-black text-toss-grey-300 hover:bg-toss-blue/5 hover:text-toss-blue hover:border-toss-blue transition-all"
+                      class="px-3 py-1.5 rounded-xl bg-toss-blue/[0.04] border border-toss-blue/10 text-[11px] font-black text-toss-blue/60 hover:bg-toss-blue hover:text-white hover:border-toss-blue transition-all"
                     >
                       #{tag}
                     </button>

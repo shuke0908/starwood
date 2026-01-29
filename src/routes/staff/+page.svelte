@@ -242,7 +242,7 @@
   <!-- Header: Search & Tab Actions -->
   <div class="flex gap-6 items-center justify-between">
     <div class="flex gap-6 items-center flex-1">
-      <div class="relative w-[500px] group flex items-center">
+      <div class="relative max-w-[500px] w-full group flex items-center">
         <Search
           class="absolute left-6 text-toss-grey-300 group-focus-within:text-toss-blue transition-colors pointer-events-none"
           size={24}
@@ -256,11 +256,11 @@
       </div>
 
       <div
-        class="bg-toss-grey-50 p-1.5 rounded-[24px] flex border border-toss-grey-100/50 shadow-inner"
+        class="bg-toss-grey-50 p-1.5 rounded-[24px] flex border border-toss-grey-100/50 shadow-inner shrink-0"
       >
         <button
           onclick={() => (activeTab = "teachers")}
-          class="px-8 py-3 rounded-[18px] font-black text-[15px] transition-all {activeTab ===
+          class="px-8 py-3 rounded-[18px] font-black text-[15px] transition-all whitespace-nowrap {activeTab ===
           'teachers'
             ? 'bg-white shadow-md text-toss-blue'
             : 'text-toss-grey-400 hover:text-toss-grey-600'}"
@@ -268,7 +268,7 @@
         >
         <button
           onclick={() => (activeTab = "drivers")}
-          class="px-8 py-3 rounded-[18px] font-black text-[15px] transition-all {activeTab ===
+          class="px-8 py-3 rounded-[18px] font-black text-[15px] transition-all whitespace-nowrap {activeTab ===
           'drivers'
             ? 'bg-white shadow-md text-toss-blue'
             : 'text-toss-grey-400 hover:text-toss-grey-600'}"
@@ -276,7 +276,7 @@
         >
         <button
           onclick={() => (activeTab = "staff")}
-          class="px-8 py-3 rounded-[18px] font-black text-[15px] transition-all {activeTab ===
+          class="px-8 py-3 rounded-[18px] font-black text-[15px] transition-all whitespace-nowrap {activeTab ===
           'staff'
             ? 'bg-white shadow-md text-toss-blue'
             : 'text-toss-grey-400 hover:text-toss-grey-600'}">일반 직원</button
@@ -285,7 +285,7 @@
     </div>
 
     <button
-      class="toss-btn-primary flex items-center gap-2 px-8 h-[64px] rounded-[24px] shadow-lg shadow-toss-blue/10 hover:scale-[1.02] active:scale-[0.98] transition-all whitespace-nowrap"
+      class="toss-btn-primary flex items-center gap-2 px-8 h-[64px] rounded-[24px] shadow-lg shadow-toss-blue/10 hover:scale-[1.02] active:scale-[0.98] transition-all whitespace-nowrap shrink-0"
     >
       <Plus size={22} class="stroke-[3]" />
       {#if activeTab === "teachers"}강사 임명{:else if activeTab === "drivers"}기사

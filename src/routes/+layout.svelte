@@ -52,54 +52,47 @@
       ],
     },
     {
-      group: "운영",
+      group: "원생 CRM",
       items: [
-        { id: "students", name: "학생", icon: Users, href: "/students" },
-        { id: "staff", name: "직원", icon: Users2, href: "/staff" },
-        {
-          id: "classes",
-          name: "수업 (반 관리)",
-          icon: GraduationCap,
-          href: "/academic/classes",
-        },
-        {
-          id: "rooms",
-          name: "강의실",
-          icon: Building,
-          href: "/academic/rooms",
-        },
+        { id: "students", name: "학생 목록", icon: Users, href: "/students" },
         {
           id: "consultations",
-          name: "상담",
+          name: "상담/입학 관리",
           icon: MessageCircle,
           href: "/students/consultations",
         },
       ],
     },
     {
-      group: "수업",
+      group: "학사 운영",
       items: [
         {
           id: "timetable",
-          name: "시간표",
+          name: "스마트 시간표",
           icon: Calendar,
           href: "/academic/timetable",
         },
         {
+          id: "classes",
+          name: "반(클래스) 관리",
+          icon: GraduationCap,
+          href: "/academic/classes",
+        },
+        {
           id: "attendance",
-          name: "출결",
+          name: "출결 관리",
           icon: CheckCircle2,
           href: "/academic/attendance",
         },
         {
           id: "homework",
-          name: "과제",
+          name: "과제 관리",
           icon: BookOpen,
           href: "/academic/homework",
         },
         {
           id: "reports",
-          name: "성적",
+          name: "성적 관리",
           icon: ClipboardList,
           href: "/academic/reports",
         },
@@ -119,12 +112,6 @@
           name: "미수금 관리",
           icon: AlertCircle,
           href: "/finance/unpaid",
-        },
-        {
-          id: "finance-sub",
-          name: "정기 결제 관리",
-          icon: CreditCard,
-          href: "/finance/subscription",
         },
         {
           id: "finance-refund",
@@ -164,34 +151,11 @@
       ],
     },
     {
-      group: "소통/알림",
-      items: [
-        {
-          id: "comm-send",
-          name: "메시지 발송",
-          icon: Send,
-          href: "/communication/send",
-        },
-        {
-          id: "comm-history",
-          name: "발송/예약 내역",
-          icon: History,
-          href: "/communication/history",
-        },
-        {
-          id: "comm-notice",
-          name: "전체 공지사항",
-          icon: Megaphone,
-          href: "/communication/notice",
-        },
-      ],
-    },
-    {
       group: "학원 설정",
       items: [
         {
           id: "settings-base",
-          name: "기본 정보/정책",
+          name: "학원 정보/정책",
           icon: Settings,
           href: "/settings/base",
         },
@@ -199,19 +163,19 @@
           id: "settings-users",
           name: "사용자/권한 관리",
           icon: UserCog,
-          href: "/settings/users",
+          href: "/staff", // 기존 /staff 페이지를 사용자 관리 겸용으로 사용 (추후 통합)
+        },
+        {
+          id: "rooms",
+          name: "학사 설정(강의실)",
+          icon: Building,
+          href: "/academic/rooms",
         },
         {
           id: "settings-products",
-          name: "수강료/상품 설정",
+          name: "재무 설정(상품/정책)",
           icon: ShoppingBag,
           href: "/settings/products",
-        },
-        {
-          id: "settings-payroll",
-          name: "월급 관리 (정책)",
-          icon: Wallet,
-          href: "/settings/payroll",
         },
         {
           id: "settings-data",
@@ -219,22 +183,61 @@
           icon: Database,
           href: "/settings/data",
         },
-        {
-          id: "settings-files",
-          name: "공유 문서함",
-          icon: FolderOpen,
-          href: "/settings/files",
-        },
       ],
     },
   ];
+
+  // Role-based Menu Filtering
+  const filteredMenuGroups = $derived(
+    menuGroups
+      .map((group) => ({
+        ...group,
+        items: group.items.filter((item) => {
+          const role = settings.data.currentUserRole;
+          if (role === "director") return true;
+
+          // 일반 직원
+          if (role === "manager") {
+            return ![
+              "management-sales",
+              "management-expenses",
+              "management-settlement",
+              "settings-base",
+              "settings-products",
+            ].includes(item.id);
+          }
+
+          // 강사
+          if (role === "teacher") {
+            return [
+              "dashboard",
+              "students",
+              "consultations",
+              "timetable",
+              "classes",
+              "attendance",
+              "homework",
+              "reports",
+            ].includes(item.id);
+          }
+
+          // 셔틀 기사
+          if (role === "driver") {
+            return ["dashboard", "students"].includes(item.id);
+          }
+
+          return true;
+        }),
+      }))
+      .filter((group) => group.items.length > 0),
+  );
 
   let expandedGroups = $state<string[]>([]);
   let isSpotlightOpen = $state(false);
   let spotlightSearchTrigger = $state("");
 
   // Spotlight & History Core logic
-  const allMenuItems = menuGroups.flatMap((g) => g.items);
+  const allMenuItems = $derived(filteredMenuGroups.flatMap((g) => g.items));
 
   // Spotlight results calculation
   let spotlightResults = $derived(
@@ -246,7 +249,13 @@
       : [
           ...allMenuItems
             .filter((i) => i.name.includes(spotlightSearchTrigger))
-            .map((i) => ({ ...i, type: "menu" as const })),
+            .map((i) => {
+              const group =
+                filteredMenuGroups.find((g) =>
+                  g.items.some((m) => m.id === i.id),
+                )?.group || "메뉴";
+              return { ...i, type: "menu" as const, group };
+            }),
           ...settings.data.students
             .filter(
               (s) =>
@@ -269,7 +278,7 @@
   $effect(() => {
     const currentPath = page.url.pathname;
     untrack(() => {
-      menuGroups.forEach((g) => {
+      filteredMenuGroups.forEach((g) => {
         if (g.items.some((i) => i.href === currentPath)) {
           if (!expandedGroups.includes(g.group)) {
             expandedGroups = [...expandedGroups, g.group];
@@ -436,7 +445,7 @@
           <div class="h-[1px] bg-toss-grey-100 mx-4"></div>
         {/if}
 
-        {#each menuGroups as group}
+        {#each filteredMenuGroups as group}
           <div class="space-y-1">
             {#if group.group !== "핵심"}
               <button
@@ -725,7 +734,6 @@
               bind:value={spotlightSearchTrigger}
               placeholder="이름, 메뉴, 번호 뒷자리 검색 (Ctrl+K)"
               class="flex-1 bg-transparent border-none outline-none text-[18px] font-bold text-toss-grey-600 placeholder:text-toss-grey-300"
-              autofocus
             />
             <div
               class="px-2 py-1 bg-white border border-toss-grey-200 rounded-lg text-[10px] font-black text-toss-grey-400 shadow-sm"
@@ -790,7 +798,7 @@
                       </p>
                       <p class="text-[12px] font-bold text-toss-grey-300">
                         {res.type === "menu"
-                          ? "메뉴 바로가기"
+                          ? `${(res as any).group} 바로가기`
                           : res.type === "student"
                             ? "원생 정보"
                             : "클래스 정보"}

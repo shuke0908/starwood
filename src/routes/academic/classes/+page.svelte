@@ -133,16 +133,14 @@
     const classStudents = settings.data.students.filter((s) =>
       c.studentIds.includes(s.id),
     );
-    const totalUnpaid = classStudents.reduce((acc, s) => acc + s.unpaid, 0);
-    const revenue = classStudents.length * (c.fee || 350000);
-    return { count: classStudents.length, revenue, unpaid: totalUnpaid };
+    return { count: classStudents.length };
   }
 </script>
 
 <div class="space-y-8 pb-10">
   <!-- Search & Action -->
   <div class="flex gap-6 items-center justify-between">
-    <div class="relative w-[500px] group flex items-center">
+    <div class="relative max-w-[500px] w-full group flex items-center">
       <Search
         class="absolute left-6 text-toss-grey-300 group-focus-within:text-toss-blue transition-colors pointer-events-none"
         size={24}
@@ -154,17 +152,17 @@
         class="w-full bg-white border border-toss-grey-50 rounded-[24px] pl-16 pr-8 h-[64px] text-[17px] font-bold text-toss-grey-600 focus:ring-8 focus:ring-toss-blue/5 outline-none transition-all shadow-sm group-hover:border-toss-grey-100 group-hover:shadow-md"
       />
     </div>
-    <div class="flex gap-4">
+    <div class="flex gap-4 shrink-0">
       <div class="flex gap-2">
         <button
-          class="px-6 h-[64px] rounded-[24px] bg-white border border-toss-grey-100 text-[15px] font-black text-toss-grey-500 hover:bg-toss-grey-50 transition-all shadow-sm flex items-center gap-2"
+          class="px-6 h-[64px] rounded-[24px] bg-white border border-toss-grey-100 text-[15px] font-black text-toss-grey-500 hover:bg-toss-grey-50 transition-all shadow-sm flex items-center gap-2 whitespace-nowrap shrink-0"
         >
-          <TrendingUp size={18} /> 매출 요약
+          <ClipboardList size={18} /> 출결 합계
         </button>
       </div>
       <button
         onclick={startNewClass}
-        class="toss-btn-primary flex items-center gap-2 px-8 h-[64px] rounded-[24px] shadow-lg shadow-toss-blue/10 hover:scale-[1.02] active:scale-[0.98] transition-all"
+        class="toss-btn-primary flex items-center gap-2 px-8 h-[64px] rounded-[24px] shadow-lg shadow-toss-blue/10 hover:scale-[1.02] active:scale-[0.98] transition-all whitespace-nowrap shrink-0"
       >
         <Plus size={22} class="stroke-[3]" /> 신규 클래스 개설
       </button>
@@ -187,8 +185,7 @@
             <th class="p-6">수업 일정</th>
             <th class="p-6">담당 강사</th>
             <th class="p-6 text-center">인원 / 정원</th>
-            <th class="p-6 text-right">월 예상 매출</th>
-            <th class="p-6 text-center">미납 현황</th>
+            <th class="p-6">수강생 미리보기</th>
             <th class="p-6 text-right pr-10">관리</th>
           </tr>
         </thead>
@@ -223,6 +220,13 @@
                       class="text-[11px] font-bold text-toss-blue uppercase tracking-wider"
                       >Active</span
                     >
+                    {#if unpaidCount > 0}
+                      <span class="w-1 h-1 rounded-full bg-red-400"></span>
+                      <span
+                        class="text-[11px] font-bold text-red-500 animate-pulse"
+                        >미납 {unpaidCount}명</span
+                      >
+                    {/if}
                   </div>
                 </div>
               </td>
@@ -274,20 +278,26 @@
                   </div>
                 </div>
               </td>
-              <td class="p-6 text-right">
-                <span class="text-[15px] font-black text-toss-grey-600"
-                  >₩{fmt(c.studentIds.length * (c.fee || 350000))}</span
-                >
-              </td>
-              <td class="p-6 text-center">
-                <span
-                  class="px-2.5 py-1 rounded-lg text-[12px] font-black {unpaidCount >
-                  0
-                    ? 'bg-red-50 text-red-500'
-                    : 'bg-toss-grey-50 text-toss-grey-300'}"
-                >
-                  {unpaidCount > 0 ? `${unpaidCount}명 미납` : "완납"}
-                </span>
+              <td class="p-6">
+                <div class="flex -space-x-2 overflow-hidden">
+                  {#each settings.data.students
+                    .filter((s) => c.studentIds.includes(s.id))
+                    .slice(0, 5) as s}
+                    <div
+                      class="w-8 h-8 rounded-full bg-toss-blue-light border-2 border-white flex items-center justify-center text-[10px] font-black text-toss-blue"
+                      title={s.name}
+                    >
+                      {s.name[0]}
+                    </div>
+                  {/each}
+                  {#if c.studentIds.length > 5}
+                    <div
+                      class="w-8 h-8 rounded-full bg-toss-grey-50 border-2 border-white flex items-center justify-center text-[10px] font-black text-toss-grey-300"
+                    >
+                      +{c.studentIds.length - 5}
+                    </div>
+                  {/if}
+                </div>
               </td>
               <td class="p-6 text-right pr-10">
                 <button
@@ -346,10 +356,12 @@
       >
         <div class="space-y-2">
           <label
+            for="class-name-input"
             class="text-[11px] font-black text-toss-grey-300 uppercase tracking-widest pl-1"
             >클래스 명칭</label
           >
           <input
+            id="class-name-input"
             bind:value={editingClass.name}
             class="w-full bg-white px-5 py-4 rounded-2xl border-none font-bold text-toss-grey-600 focus:ring-4 focus:ring-toss-blue/5 outline-none shadow-sm h-16 text-[18px]"
           />
@@ -358,10 +370,12 @@
         <div class="grid grid-cols-2 gap-6">
           <div class="space-y-2">
             <label
+              for="class-teacher-select"
               class="text-[11px] font-black text-toss-grey-300 uppercase tracking-widest pl-1"
               >담당 강사</label
             >
             <select
+              id="class-teacher-select"
               bind:value={editingClass.teacherId}
               class="w-full bg-white px-5 py-4 rounded-2xl border-none font-bold text-toss-grey-600 focus:ring-4 focus:ring-toss-blue/5 outline-none shadow-sm h-16"
             >
@@ -372,10 +386,12 @@
           </div>
           <div class="space-y-2">
             <label
+              for="class-time-input"
               class="text-[11px] font-black text-toss-grey-300 uppercase tracking-widest pl-1"
               >수업 시간</label
             >
             <input
+              id="class-time-input"
               bind:value={editingClass.time}
               class="w-full bg-white px-5 py-4 rounded-2xl border-none font-bold text-toss-grey-600 focus:ring-4 focus:ring-toss-blue/5 outline-none shadow-sm h-16"
               placeholder="HH:mm-HH:mm"

@@ -300,3 +300,45 @@ export const MOCK_ROOMS_DATA = Array.from({ length: 24 }, (_, i) => {
         memo: i % 5 === 0 ? "최근 리모델링 완료" : ""
     };
 });
+// 5. Dashboard Enhancements (Live Feed & Trends)
+export const MOCK_FEED = [
+    { id: 1, time: "14:05", type: 'attendance', user: "김도윤", action: "등원 완료", detail: "대치본관", roleFilter: ['director', 'staff', 'teacher'] },
+    { id: 2, time: "14:02", type: 'payment', user: "하준 어머니", action: "결제 완료", detail: "320,000원 (카드)", roleFilter: ['director', 'staff'] },
+    { id: 3, time: "13:50", type: 'homework', user: "조현수 강사", action: "과제 등록", detail: "고1 영어반 (Unit 3)", roleFilter: ['director', 'teacher'] },
+    { id: 4, time: "13:30", type: 'notice', user: "관리자", action: "전체 공지", detail: "금일 에어컨 점검 안내", roleFilter: ['director', 'staff', 'teacher'] },
+    { id: 5, time: "11:20", type: 'consultation', user: "박민준", action: "상담 예약", detail: "방문 상담 (16:00)", roleFilter: ['director', 'staff'] },
+    { id: 6, time: "09:40", type: 'payment', user: "지우 어머니", action: "이체 확인", detail: "380,000원 (신한은행)", roleFilter: ['director', 'staff'] },
+];
+
+export const MOCK_TRENDS = {
+    revenue: [
+        { month: '8월', total: 9800, expense: 7200 },
+        { month: '9월', total: 10500, expense: 7100 },
+        { month: '10월', total: 11200, expense: 7500 },
+        { month: '11월', total: 12100, expense: 7800 },
+        { month: '12월', total: 12800, expense: 8000 },
+        { month: '1월', total: 13800, expense: 8200 },
+    ],
+    growth: [
+        { month: '8월', count: 480 },
+        { month: '9월', count: 502 },
+        { month: '10월', count: 525 },
+        { month: '11월', count: 558 },
+        { month: '12월', count: 582 },
+        { month: '1월', count: 600 },
+    ],
+    attendance: [
+        { day: '월', rate: 94 },
+        { day: '화', rate: 92 },
+        { day: '수', rate: 95 },
+        { day: '목', rate: 89 },
+        { day: '금', rate: 91 },
+        { day: '토', rate: 85 },
+    ],
+    homework: [
+        { week: '1주', rate: 78 },
+        { week: '2주', rate: 82 },
+        { week: '3주', rate: 85 },
+        { week: '4주', rate: 80 },
+    ]
+};

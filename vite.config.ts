@@ -5,6 +5,9 @@ import { defineConfig } from 'vite';
 export default defineConfig({ 
     plugins: [tailwindcss(), sveltekit()],
     optimizeDeps: {
-        include: ['lucide-svelte']
+        include: ['lucide-svelte', 'xlsx']
+    },
+    ssr: {
+        noExternal: ['xlsx']
     }
 });

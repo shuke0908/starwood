@@ -225,7 +225,7 @@ export interface PaymentRecord {
     productIds?: string[]; // 선택적으로 변경
     date: string;
     description: string;
-    status?: 'completed' | 'canceled' | 'refunded';
+    status?: 'completed' | 'canceled' | 'refunded' | 'pending' | 'unpaid';
 }
 
 export interface RefundRecord {
