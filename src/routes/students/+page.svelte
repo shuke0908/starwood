@@ -29,6 +29,8 @@
     BookOpen,
     Clock,
     Star,
+    Settings,
+    UserCheck,
   } from "lucide-svelte";
   import { fade, slide, fly } from "svelte/transition";
   import Drawer from "$lib/components/Drawer.svelte";
@@ -45,7 +47,6 @@
   let filterClass = $state("전체");
   let selectedIds = $state<string[]>([]);
   let isDrawerOpen = $state(false);
-  let isModalOpen = $state(false);
   let activeTab = $state("info");
   let selectedStudentId = $state<string | null>(null);
 
@@ -164,7 +165,7 @@
       studentPhone: "",
       parentContacts: [{ type: "부", name: "", phone: "", isPrimary: true }],
       school: "",
-      grade: "1학년",
+      grade: "초1",
       status: "재원",
       regDate: new Date().toISOString().split("T")[0],
       unpaid: 0,
@@ -172,12 +173,19 @@
       consultationCount: 0,
       productIds: [],
       classes: [],
+      memo: "",
+      specialNotes: "",
     };
-    isModalOpen = true;
+    isDrawerOpen = true;
+    activeTab = "info";
   }
 
   function saveStudent() {
-    if (!editingStudent.name || !editingStudent.studentPhone) return;
+    if (!editingStudent.name || !editingStudent.studentPhone) {
+      toast.show("필수 정보를 입력해주세요.", "error");
+      return;
+    }
+
     const idx = settings.data.students.findIndex(
       (s) => s.id === editingStudent.id,
     );
@@ -189,8 +197,8 @@
     } else {
       settings.data.students.push(editingStudent as Student);
     }
-    isModalOpen = false;
-    selectedStudentId = editingStudent.id as string;
+    isDrawerOpen = false;
+    toast.show("저장되었습니다.", "success");
   }
 
   function deleteStudent(id: string) {
@@ -228,6 +236,7 @@
   // --- Smart Promotion & Mix-up Logic ---
   let isPromotionModalOpen = $state(false);
   let promotionStep = $state<"config" | "preview">("config");
+  let activePreviewGrade = $state(""); // 현재 보고 있는 학년 탭
 
   // 가상의 진급 데이터 (미리보기용)
   let promotionWorkspace = $state<
@@ -236,9 +245,12 @@
       name: string;
       currentGrade: string;
       nextGrade: string;
-      currentClasses: string[];
-      targetClassId: string | null;
-      fee: number;
+      assignments: {
+        currentClassName: string;
+        targetClassId: string | null;
+        fee: number;
+        originalFee: number;
+      }[];
       isSelected: boolean;
     }[]
   >([]);
@@ -253,40 +265,77 @@
     return mapping;
   });
 
+  // 진급 데이터 그룹화 (성능 최적화: 필터링 부하 감소)
+  const groupedPromotionWorkspace = $derived.by(() => {
+    const groups: Record<string, typeof promotionWorkspace> = {};
+    settings.data.academy.gradeSystem.forEach((g) => (groups[g] = []));
+    promotionWorkspace.forEach((s) => {
+      if (groups[s.currentGrade]) groups[s.currentGrade].push(s);
+    });
+    return groups;
+  });
+
   function openPromotion() {
-    // 진급 데이터 초기화
+    // 진급 데이터 초기화 (기본값으로 기존 반 유지 로직 추가)
     promotionWorkspace = settings.data.students
       .filter((s) => s.status !== "퇴원")
       .map((s) => {
         const next = promotionMapping[s.grade] || s.grade;
+
+        // 다중 반 배정 데이터 초기화
+        const assignments = s.classes.map((className) => {
+          const currentClassObj = settings.data.classes.find(
+            (c) => c.name === className,
+          );
+          return {
+            currentClassName: className,
+            targetClassId: currentClassObj?.id || null,
+            fee: currentClassObj?.fee || 0,
+            originalFee: currentClassObj?.fee || 0,
+          };
+        });
+
+        // 반이 하나도 없는 경우 (신규생 등) 대비
+        if (assignments.length === 0) {
+          assignments.push({
+            currentClassName: "없음",
+            targetClassId: null,
+            fee: 0,
+            originalFee: 0,
+          });
+        }
+
         return {
           id: s.id,
           name: s.name,
           currentGrade: s.grade,
           nextGrade: next,
-          currentClasses: s.classes,
-          targetClassId: null, // 초기값은 선택 안됨
-          fee: 0,
+          assignments,
           isSelected: true,
         };
       });
     promotionStep = "config";
     isPromotionModalOpen = true;
+    activePreviewGrade = settings.data.academy.gradeSystem[0] || "";
   }
 
-  function handleClassChange(studentId: string, classId: string) {
+  function handleClassChange(
+    studentId: string,
+    assignmentIdx: number,
+    classId: string,
+  ) {
     const student = promotionWorkspace.find((s) => s.id === studentId);
-    if (student) {
+    if (student && student.assignments[assignmentIdx]) {
       const cls = settings.data.classes.find((c) => c.id === classId);
-      student.targetClassId = classId;
-      student.fee = cls?.fee || 0;
+      student.assignments[assignmentIdx].targetClassId = classId;
+      student.assignments[assignmentIdx].fee = cls?.fee || 0;
     }
   }
 
   function applySmartPromotion() {
     const targets = promotionWorkspace.filter((s) => s.isSelected);
     if (targets.length === 0) {
-      toast.show("선택된 학생이 없습니다.", "warning");
+      toast.show("선택된 학생이 없습니다.", "info");
       return;
     }
 
@@ -306,28 +355,32 @@
           student.memo =
             (student.memo ? student.memo + " | " : "") +
             "일괄 진급으로 인한 자동 졸업";
+          student.classes = [];
         } else {
           student.grade = t.nextGrade;
 
-          // 2. 반 배정 변경
-          if (t.targetClassId) {
+          // 2. 다중 반 배정 처리
+          const newClasses: string[] = [];
+          t.assignments.forEach((assign) => {
             const newCls = settings.data.classes.find(
-              (c) => c.id === t.targetClassId,
+              (c) => c.id === assign.targetClassId,
             );
             if (newCls) {
-              student.classes = [newCls.name];
-              // 3. 수강료 청구 (초안 생성)
+              newClasses.push(newCls.name);
+
+              // 3. 수강료 청구서 생성 (각 과목별)
               settings.data.payments.unshift({
-                id: `pay_${Date.now()}_${student.id}`,
+                id: `pay_${Date.now()}_${student.id}_${newCls.id}`,
                 studentId: student.id,
                 amount: newCls.fee,
                 date: new Date().toISOString().slice(0, 10),
-                description: `${t.nextGrade} 진급 정규 수강료 (${newCls.name})`,
+                description: `${t.nextGrade} 진급 수강료 (${newCls.name})`,
                 type: "이체",
                 status: "pending",
               });
             }
-          }
+          });
+          student.classes = newClasses;
         }
       }
     });
@@ -487,11 +540,16 @@
 
   <!-- Table Area with Virtual Scroll -->
   <div
-    class="bg-white rounded-[40px] border border-toss-grey-50 shadow-sm overflow-hidden flex flex-col h-[calc(100vh-260px)] relative"
+    class="bg-white rounded-[40px] border border-toss-grey-50 shadow-sm overflow-hidden flex flex-col h-[calc(100vh-260px)]"
   >
-    <div class="overflow-x-auto">
-      <table class="w-full text-left border-collapse whitespace-nowrap">
-        <thead class="bg-toss-grey-50 border-b border-toss-grey-100">
+    <!-- Table Header (Synced with body) -->
+    <div
+      class="overflow-x-auto bg-toss-grey-50 border-b border-toss-grey-100 pr-[10px]"
+    >
+      <table
+        class="w-full text-left border-collapse table-fixed whitespace-nowrap"
+      >
+        <thead>
           <tr
             class="text-[12px] font-black text-toss-grey-600 uppercase tracking-tight"
           >
@@ -508,32 +566,36 @@
                 class="w-4 h-4 rounded-md border-toss-grey-200 text-toss-blue focus:ring-toss-blue/20 transition-all cursor-pointer"
               />
             </th>
-            <th class="w-[140px] p-4">이름</th>
+            <th class="w-[120px] p-4">이름</th>
             <th class="w-[140px] p-4">학교 / 학년</th>
             <th class="w-[180px] p-4">연락처</th>
-            <th class="w-[200px] p-4">메모</th>
+            <th class="w-[180px] p-4">메모</th>
             <th class="p-4">수강 클래스</th>
-            <th class="w-[120px] p-4 text-center">최근 출결</th>
-            <th class="w-[120px] p-4 text-center">최근 상담일</th>
-            <th class="text-right w-[140px] p-4 pr-10">납부 상태</th>
+            <th class="w-[100px] p-4 text-center">최근 출결</th>
+            <th class="w-[100px] p-4 text-center">최근 상담일</th>
+            <th class="w-[140px] p-4 pr-10 text-right">납부 상태</th>
           </tr>
         </thead>
       </table>
     </div>
 
+    <!-- Table Body (Virtual Scroll) -->
     <div
-      class="flex-1 overflow-y-auto relative custom-scroll h-full"
+      class="flex-1 overflow-y-auto overflow-x-auto relative custom-scroll h-full"
       onscroll={handleScroll}
     >
       <div
         style="height: {filteredStudents.length * 72}px; position: relative;"
       >
         <table
-          class="w-full text-left border-collapse absolute top-0 left-0"
+          class="w-full text-left border-collapse table-fixed absolute top-0 left-0"
           style="transform: translateY({offsetY}px)"
         >
           <tbody class="divide-y divide-toss-grey-50/50">
             {#each visibleStudents as s (s.id)}
+              {@const studentTotalFee = settings.data.classes
+                .filter((c) => s.classes.includes(c.name))
+                .reduce((sum, c) => sum + c.fee, 0)}
               <tr
                 class="hover:bg-toss-blue-light/15 transition-all cursor-pointer {selectedIds.includes(
                   s.id,
@@ -559,7 +621,7 @@
                     class="w-4 h-4 rounded-md border-toss-grey-100 text-toss-blue focus:ring-toss-blue/20 transition-all cursor-pointer"
                   />
                 </td>
-                <td class="w-[140px] p-4">
+                <td class="w-[120px] p-4 truncate">
                   <div
                     class="text-[15px] font-black text-toss-grey-600 transition-colors group-hover:text-toss-blue"
                   >
@@ -567,8 +629,9 @@
                   </div>
                 </td>
                 <td class="w-[140px] p-4">
-                  <div class="flex flex-col gap-0.5">
-                    <span class="text-[14px] font-black text-toss-grey-800"
+                  <div class="flex flex-col gap-0.5 whitespace-normal">
+                    <span
+                      class="text-[14px] font-black text-toss-grey-800 line-clamp-1"
                       >{s.school}</span
                     >
                     <span class="text-[11px] font-bold text-toss-grey-500"
@@ -602,16 +665,18 @@
                     {/if}
                   </div>
                 </td>
-                <td class="w-[200px] p-4">
+                <td class="w-[180px] p-4">
                   <p
-                    class="text-[13px] font-medium text-toss-grey-600 truncate max-w-[180px]"
+                    class="text-[13px] font-medium text-toss-grey-600 truncate"
                     title={s.memo}
                   >
                     {s.memo || "-"}
                   </p>
                 </td>
-                <td class="p-4">
-                  <div class="flex flex-wrap gap-1">
+                <td class="p-4 overflow-hidden">
+                  <div
+                    class="flex flex-wrap gap-1 max-h-[56px] overflow-hidden"
+                  >
                     {#each s.classes.slice(0, 3) as cls}
                       <span
                         class="px-2.5 py-1 rounded-lg bg-toss-blue/[0.08] border border-toss-blue/10 text-[11px] font-black text-toss-blue hover:bg-toss-blue hover:text-white transition-all cursor-default"
@@ -627,17 +692,17 @@
                     {/if}
                   </div>
                 </td>
-                <td class="w-[120px] p-4 text-center">
+                <td class="w-[100px] p-4 text-center">
                   <span class="text-[13px] font-bold text-toss-grey-600"
                     >{s.recentAttendance || "-"}</span
                   >
                 </td>
-                <td class="w-[120px] p-4 text-center">
+                <td class="w-[100px] p-4 text-center">
                   <span class="text-[13px] font-bold text-toss-grey-600"
                     >{s.lastConsultationDate || "-"}</span
                   >
                 </td>
-                <td class="text-right w-[140px] p-4 pr-10">
+                <td class="w-[140px] p-4 pr-10 text-right">
                   <div class="flex flex-col items-end gap-1">
                     <span
                       class="px-3 py-1.5 rounded-full text-[11px] font-black transition-all {s.status ===
@@ -649,7 +714,11 @@
                     >
                       {s.status === "재원" ? "납부완료" : s.status}
                     </span>
-                    {#if s.unpaid > 0}
+                    {#if s.status === "재원" && studentTotalFee > 0}
+                      <span class="text-[12px] font-black text-toss-blue"
+                        >₩{fmt(studentTotalFee)}</span
+                      >
+                    {:else if s.unpaid > 0}
                       <span class="text-[12px] font-black text-red-500"
                         >₩{fmt(s.unpaid)}</span
                       >
@@ -676,7 +745,7 @@
       {#if activeTab === "info"}
         <div class="space-y-8 h-full overflow-y-auto pr-2 pb-20" in:fade>
           <!-- Quick Stats (Editable) -->
-          <section class="grid grid-cols-3 gap-3">
+          <section class="grid grid-cols-2 gap-3">
             <div class="p-5 bg-toss-blue-light/30 rounded-[28px] space-y-2">
               <label
                 for="student-status-edit"
@@ -710,19 +779,6 @@
                 id="student-regdate-edit"
                 type="date"
                 bind:value={editingStudent.regDate}
-                class="w-full bg-transparent border-none font-black text-toss-grey-600 text-[16px] outline-none"
-              />
-            </div>
-            <div class="p-5 bg-toss-grey-50 rounded-[28px] space-y-2">
-              <label
-                for="student-admission-edit"
-                class="text-[10px] font-black text-toss-grey-300 uppercase tracking-widest pl-1"
-                >입학일</label
-              >
-              <input
-                id="student-admission-edit"
-                type="date"
-                bind:value={editingStudent.admissionDate}
                 class="w-full bg-transparent border-none font-black text-toss-grey-600 text-[16px] outline-none"
               />
             </div>
@@ -912,22 +968,7 @@
             </div>
           </section>
 
-          <!-- Action Buttons -->
-          <footer class="flex gap-4 pt-10">
-            <button
-              onclick={() => deleteStudent(editingStudent.id!)}
-              class="w-16 h-16 rounded-3xl bg-red-50 text-red-400 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm"
-              title="원생 삭제"
-            >
-              <Trash2 size={24} />
-            </button>
-            <button
-              onclick={saveStudent}
-              class="flex-1 h-16 bg-toss-blue text-white rounded-[28px] font-black text-[18px] shadow-xl shadow-toss-blue/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-            >
-              <Save size={20} /> 변경사항 저장하기
-            </button>
-          </footer>
+          <!-- Tab-specific footer removed, using common drawer footer -->
         </div>
       {:else if activeTab === "record"}
         <div class="space-y-6 h-full overflow-y-auto pr-2" in:fade>
@@ -1128,12 +1169,13 @@
             </h4>
 
             <div class="space-y-4">
-              <div class="space-y-2">
+              <div class="space-y-3">
                 <label
+                  for="consult-type"
                   class="text-[11px] font-black text-toss-grey-400 uppercase tracking-widest pl-1"
                   >상담 유형</label
                 >
-                <div class="grid grid-cols-3 gap-2">
+                <div class="grid grid-cols-3 gap-2" id="consult-type">
                   {#each ["전화", "대면", "카톡"] as type}
                     <button
                       class="py-3 rounded-2xl bg-white border border-toss-grey-100 text-[13px] font-black text-toss-grey-400 hover:border-toss-blue hover:text-toss-blue transition-all"
@@ -1144,23 +1186,26 @@
                 </div>
               </div>
 
-              <div class="space-y-2">
+              <div class="space-y-3">
                 <label
+                  for="consult-note"
                   class="text-[11px] font-black text-toss-grey-400 uppercase tracking-widest pl-1"
                   >상담 내용 (메모)</label
                 >
                 <textarea
+                  id="consult-note"
                   class="w-full bg-white border border-toss-grey-100 rounded-2xl p-4 h-32 text-[14px] font-medium text-toss-grey-600 outline-none focus:ring-4 focus:ring-toss-blue/5 focus:border-toss-blue transition-all resize-none"
                   placeholder="상담 상세 내용을 입력하세요..."
                 ></textarea>
               </div>
 
-              <div class="space-y-2">
+              <div class="space-y-3">
                 <label
+                  for="consult-tags"
                   class="text-[11px] font-black text-toss-grey-400 uppercase tracking-widest pl-1"
                   >태그 설정</label
                 >
-                <div class="flex flex-wrap gap-2">
+                <div class="flex flex-wrap gap-2" id="consult-tags">
                   {#each ["미납", "성적", "출결", "태도"] as tag}
                     <button
                       class="px-3 py-1.5 rounded-xl bg-toss-blue/[0.04] border border-toss-blue/10 text-[11px] font-black text-toss-blue/60 hover:bg-toss-blue hover:text-white hover:border-toss-blue transition-all"
@@ -1171,12 +1216,14 @@
                 </div>
               </div>
 
-              <div class="space-y-2">
+              <div class="space-y-3">
                 <label
+                  for="consult-followup"
                   class="text-[11px] font-black text-toss-grey-400 uppercase tracking-widest pl-1"
-                  >후속 조치 (다음 상담일/숙제 등)</label
+                  >후속 조치</label
                 >
                 <input
+                  id="consult-followup"
                   type="text"
                   class="w-full bg-white border border-toss-grey-100 rounded-2xl px-5 h-12 text-[14px] font-medium text-toss-grey-600 outline-none focus:ring-4 focus:ring-toss-blue/5 focus:border-toss-blue transition-all"
                   placeholder="예: 보강 제안, 다음주 월요일 확인 상담"
@@ -1357,440 +1404,356 @@
       {/if}
     </Tabs>
 
-    <footer class="pt-10 border-t border-toss-grey-50 flex gap-3 mt-10">
+    <footer class="pt-8 border-t border-toss-grey-50 flex gap-4 mt-8">
       <button
-        onclick={() => deleteStudent(selectedStudent.id)}
-        class="h-14 w-14 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-100 transition-all"
+        onclick={() => deleteStudent(selectedStudent.id!)}
+        class="w-16 h-16 rounded-3xl bg-red-50 text-red-400 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm"
+        title="원생 삭제"
       >
         <Trash2 size={24} />
       </button>
       <button
-        onclick={() => {
-          editingStudent = { ...selectedStudent };
-          isModalOpen = true;
-        }}
-        class="flex-1 h-14 bg-toss-grey-600 text-white rounded-2xl font-black text-[16px] hover:bg-toss-grey-700 transition-all"
+        onclick={saveStudent}
+        class="flex-1 h-16 bg-toss-blue text-white rounded-[28px] font-black text-[18px] shadow-xl shadow-toss-blue/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
       >
-        상세 정보 수정
+        <Save size={20} /> 변경사항 저장하기
       </button>
     </footer>
   {/if}
 </Drawer>
 
-<!-- Edit Modal -->
-<Modal
-  bind:isOpen={isModalOpen}
-  title={editingStudent.id ? "원생 정보 수정" : "학생 등록"}
->
-  <div class="space-y-6 h-[70vh] overflow-y-auto pr-2 custom-scroll">
-    <section class="space-y-4">
-      <h4
-        class="text-[14px] font-black text-toss-grey-600 border-l-4 border-toss-blue pl-3"
-      >
-        기본 정보
-      </h4>
-      <div class="grid grid-cols-2 gap-4">
-        <div class="space-y-2">
-          <label
-            for="student-name"
-            class="text-[12px] font-black text-toss-grey-400">이름</label
-          >
-          <input
-            id="student-name"
-            bind:value={editingStudent.name}
-            class="toss-input"
-            placeholder="이름 입력"
-          />
-        </div>
-        <div class="space-y-2">
-          <label class="text-[12px] font-black text-toss-grey-400">성별</label>
-          <div class="flex gap-2">
-            {#each ["남", "여"] as g}
-              <button
-                onclick={() => (editingStudent.gender = g as "남" | "여")}
-                class="flex-1 h-[48px] rounded-xl font-bold transition-all {editingStudent.gender ===
-                g
-                  ? 'bg-toss-blue text-white shadow-md'
-                  : 'bg-toss-grey-50 text-toss-grey-400'}"
-              >
-                {g}
-              </button>
-            {/each}
-          </div>
-        </div>
-      </div>
-      <div class="space-y-2">
-        <label
-          for="student-phone"
-          class="text-[12px] font-black text-toss-grey-400">학생 연락처</label
-        >
-        <input
-          id="student-phone"
-          bind:value={editingStudent.studentPhone}
-          class="toss-input"
-          placeholder="010-0000-0000"
-        />
-      </div>
-    </section>
-
-    <section class="space-y-4">
-      <div class="flex justify-between items-center">
-        <h4
-          class="text-[14px] font-black text-toss-grey-600 border-l-4 border-toss-blue pl-3"
-        >
-          보호자 정보
-        </h4>
-        <button
-          onclick={() =>
-            (editingStudent.parentContacts = [
-              ...(editingStudent.parentContacts || []),
-              { type: "모", name: "", phone: "", isPrimary: false },
-            ])}
-          class="text-[12px] font-black text-toss-blue hover:underline"
-        >
-          + 보호자 추가
-        </button>
-      </div>
-      <div class="space-y-4">
-        {#each editingStudent.parentContacts || [] as parent, i}
-          <div class="p-4 bg-toss-grey-50 rounded-2xl space-y-3 relative group">
-            {#if i > 0}
-              <button
-                onclick={() =>
-                  (editingStudent.parentContacts = (
-                    editingStudent.parentContacts || []
-                  ).filter((_, idx) => idx !== i))}
-                class="absolute right-2 top-2 p-1 text-toss-grey-200 hover:text-red-500 transition-colors"
-              >
-                <X size={16} />
-              </button>
-            {/if}
-            <div class="grid grid-cols-3 gap-3">
-              <select
-                bind:value={parent.type}
-                class="toss-input bg-white h-[44px]"
-              >
-                <option value="부">부</option>
-                <option value="모">모</option>
-                <option value="조부">조부</option>
-                <option value="조모">조모</option>
-                <option value="기타">기타</option>
-              </select>
-              <input
-                bind:value={parent.name}
-                class="toss-input bg-white h-[44px] col-span-2"
-                placeholder="보호자 명칭"
-              />
-            </div>
-            <div class="flex gap-3">
-              <input
-                bind:value={parent.phone}
-                class="toss-input bg-white h-[44px] flex-1"
-                placeholder="연락처"
-              />
-              <button
-                onclick={() => {
-                  (editingStudent.parentContacts || []).forEach(
-                    (p) => (p.isPrimary = false),
-                  );
-                  parent.isPrimary = true;
-                }}
-                class="px-4 rounded-xl text-[12px] font-black transition-all {parent.isPrimary
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-white text-toss-grey-300 border border-toss-grey-100'}"
-              >
-                {parent.isPrimary ? "주보호자" : "지정"}
-              </button>
-            </div>
-          </div>
-        {/each}
-      </div>
-    </section>
-
-    <section class="space-y-4">
-      <h4
-        class="text-[14px] font-black text-toss-grey-600 border-l-4 border-toss-blue pl-3"
-      >
-        학적 정보
-      </h4>
-      <div class="grid grid-cols-2 gap-4">
-        <div class="space-y-2">
-          <label
-            for="student-school"
-            class="text-[12px] font-black text-toss-grey-400">학교</label
-          >
-          <input
-            id="student-school"
-            bind:value={editingStudent.school}
-            class="toss-input"
-            placeholder="학교명"
-          />
-        </div>
-        <div class="space-y-2">
-          <label
-            for="student-grade"
-            class="text-[12px] font-black text-toss-grey-400">학년</label
-          >
-          <select
-            id="student-grade"
-            bind:value={editingStudent.grade}
-            class="toss-input"
-          >
-            {#each settings.data.academy.gradeSystem as g}
-              <option value={g}>{g}</option>
-            {/each}
-          </select>
-        </div>
-      </div>
-    </section>
-
-    <button
-      onclick={saveStudent}
-      class="w-full h-16 bg-toss-blue text-white rounded-[28px] font-black text-[18px] mt-4 shadow-xl shadow-toss-blue/20 hover:bg-toss-blue-dark transition-all active:scale-95"
-    >
-      저장하기
-    </button>
-  </div>
-</Modal>
+<!-- Edit Modal Removed since drawer is fully editable -->
 
 <!-- Promotion & Grade Management Drawer -->
-<Drawer
-  bind:isOpen={isPromotionModalOpen}
-  title="학년 체계 및 일괄 진급 관리"
-  width="1100px"
->
-  <div class="px-12 py-10 space-y-12 pb-40">
-    <!-- Header with Steps -->
-    <header class="flex justify-between items-center">
-      <div class="space-y-1">
-        <h2 class="text-[32px] font-black text-toss-grey-800 tracking-tight">
+<Drawer bind:isOpen={isPromotionModalOpen} title="" width="1100px">
+  <div class="px-10 py-6 space-y-8 pb-40">
+    <!-- Compact Header with Steps -->
+    <header class="flex justify-between items-start">
+      <div class="flex items-center gap-3">
+        <h2 class="text-[22px] font-black text-toss-grey-800 tracking-tight">
           스마트 진급 가이드 🚀
         </h2>
-        <p class="text-[16px] font-bold text-toss-grey-500">
+        <div class="h-4 w-[1px] bg-toss-grey-100"></div>
+        <p class="text-[13px] font-bold text-toss-grey-400">
           학년 상향 및 반 배정을 직관적으로 관리하세요.
         </p>
       </div>
       <div
-        class="flex p-1.5 bg-toss-grey-50 rounded-[24px] border border-toss-grey-100 shadow-inner"
+        class="flex p-1 bg-toss-grey-50 rounded-[18px] border border-toss-grey-100 shadow-inner mr-14"
       >
         <button
           onclick={() => (promotionStep = "config")}
-          class="px-8 py-3 rounded-2xl text-[14px] font-black transition-all {promotionStep ===
+          class="px-5 py-1.5 rounded-2xl text-[12px] font-black transition-all {promotionStep ===
           'config'
-            ? 'bg-white shadow-md text-toss-blue'
+            ? 'bg-white shadow-sm text-toss-blue'
             : 'text-toss-grey-400'}">1. 체계 설정</button
         >
         <button
           onclick={() => (promotionStep = "preview")}
-          class="px-8 py-3 rounded-2xl text-[14px] font-black transition-all {promotionStep ===
+          class="px-5 py-1.5 rounded-2xl text-[12px] font-black transition-all {promotionStep ===
           'preview'
-            ? 'bg-white shadow-md text-toss-blue'
+            ? 'bg-white shadow-sm text-toss-blue'
             : 'text-toss-grey-400'}">2. 대상 및 반 배정</button
         >
       </div>
     </header>
 
     {#if promotionStep === "config"}
-      <!-- Config Section -->
-      <section class="space-y-8" in:fade>
-        <div class="flex justify-between items-end">
-          <div class="space-y-4">
+      <!-- Config Section: Split Layout (Left: Input, Right: Map) -->
+      <section class="grid grid-cols-2 gap-10 h-full" in:fade>
+        <div class="space-y-6">
+          <div class="space-y-3">
             <h4
-              class="text-[18px] font-black text-toss-grey-800 flex items-center gap-2"
+              class="text-[16px] font-black text-toss-grey-800 flex items-center gap-2"
             >
-              <Settings size={20} class="text-toss-blue" /> 학원 학년 체계 정의
+              <Settings size={18} class="text-toss-blue" /> 1. 학급 학년 체계
             </h4>
-            <p class="text-[14px] font-bold text-toss-grey-500 ml-7">
-              콤마(,)로 구분하여 낮은 학년부터 순서대로 입력하세요. 마지막
-              단계는 졸업 처리됩니다.
+            <p
+              class="text-[13px] font-bold text-toss-grey-400 leading-relaxed pl-7"
+            >
+              콤마(,)로 구분하여 입력하세요. 마지막 단계는 졸업 처리됩니다.
+            </p>
+          </div>
+
+          <div class="relative">
+            <textarea
+              value={settings.data.academy.gradeSystem.join(", ")}
+              oninput={(e) => {
+                settings.data.academy.gradeSystem = (
+                  e.target as HTMLTextAreaElement
+                ).value
+                  .split(",")
+                  .map((s) => s.trim())
+                  .filter(Boolean);
+              }}
+              class="w-full h-64 p-6 rounded-[32px] bg-toss-grey-50 border-2 border-transparent focus:border-toss-blue focus:bg-white font-bold text-[16px] text-toss-grey-700 outline-none transition-all shadow-inner leading-relaxed"
+              placeholder="초1, 초2, 초3..."
+            ></textarea>
+            <div
+              class="absolute right-6 bottom-6 px-3 py-1 bg-white rounded-full border border-toss-grey-100 text-[11px] font-black text-toss-blue shadow-sm"
+            >
+              총 {settings.data.academy.gradeSystem.length}단계
+            </div>
+          </div>
+
+          <div
+            class="p-6 bg-toss-blue-light/10 rounded-3xl border border-toss-blue/5 space-y-2"
+          >
+            <p
+              class="text-[14px] font-black text-toss-blue flex items-center gap-2"
+            >
+              <Clock size={16} /> 변경 시 주의사항
+            </p>
+            <p
+              class="text-[12px] font-medium text-toss-grey-500 leading-relaxed"
+            >
+              매핑 순서가 바뀌면 진급 대상 학년도 함께 변경됩니다. 데이터
+              정합성을 위해 배열 순서에 유의해 주세요.
             </p>
           </div>
         </div>
 
-        <div class="relative">
-          <textarea
-            value={settings.data.academy.gradeSystem.join(", ")}
-            oninput={(e) => {
-              settings.data.academy.gradeSystem = (
-                e.target as HTMLTextAreaElement
-              ).value
-                .split(",")
-                .map((s) => s.trim())
-                .filter(Boolean);
-            }}
-            class="w-full h-40 p-8 rounded-[40px] bg-toss-grey-50 border-2 border-transparent focus:border-toss-blue focus:bg-white font-black text-[19px] text-toss-grey-700 outline-none transition-all shadow-inner leading-relaxed"
-            placeholder="초1, 초2, 초3..."
-          ></textarea>
-        </div>
-
         <div
-          class="bg-white border border-toss-grey-100 rounded-[40px] overflow-hidden shadow-sm"
+          class="space-y-6 border-l border-toss-grey-100 pl-10 flex flex-col h-[650px]"
         >
-          <table class="w-full text-left">
-            <thead class="bg-toss-grey-50 border-b border-toss-grey-100">
-              <tr class="text-[12px] font-black text-toss-grey-400">
-                <th class="p-6 text-center">순서</th>
-                <th class="p-6 pl-10">현재 학년</th>
-                <th class="p-6 text-center"></th>
-                <th class="p-6">진급 후 대상</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-toss-grey-50">
-              {#each Object.entries(promotionMapping) as [curr, next], i}
-                <tr class="hover:bg-toss-grey-50/50 transition-all">
-                  <td class="p-6 text-center">
-                    <span
-                      class="w-8 h-8 inline-flex items-center justify-center rounded-xl bg-toss-grey-100 text-[12px] font-black text-toss-grey-500"
-                      >{i + 1}</span
-                    >
-                  </td>
-                  <td
-                    class="p-6 pl-10 text-[17px] font-black text-toss-grey-700"
-                    >{curr}</td
-                  >
-                  <td class="text-center"
-                    ><ChevronRight
-                      size={18}
-                      class="text-toss-grey-200 inline"
-                    /></td
-                  >
-                  <td
-                    class="p-6 text-[17px] font-black {next === '졸업/퇴원'
-                      ? 'text-red-500'
-                      : 'text-toss-blue'}">{next}</td
-                  >
-                </tr>
-              {/each}
-            </tbody>
-          </table>
-        </div>
-
-        <div class="flex justify-end pt-10">
-          <button
-            onclick={() => (promotionStep = "preview")}
-            class="toss-btn-primary px-12 h-20 rounded-[32px] font-black text-[18px] flex items-center gap-4 shadow-xl shadow-toss-blue/20"
+          <h4
+            class="text-[16px] font-black text-toss-grey-800 flex items-center gap-2"
           >
-            다음 단계: 원생별 반 배정하기 <ChevronRight size={24} />
-          </button>
+            <TrendingUp size={18} class="text-toss-blue" /> 2. 진급 매핑 미리보기
+          </h4>
+
+          <div
+            class="bg-white border border-toss-grey-100 rounded-[28px] overflow-hidden shadow-sm flex-1 overflow-y-auto custom-scroll"
+          >
+            <table class="w-full text-left">
+              <thead
+                class="bg-toss-grey-50 border-b border-toss-grey-100 sticky top-0"
+              >
+                <tr
+                  class="text-[11px] font-black text-toss-grey-400 uppercase tracking-tighter"
+                >
+                  <th class="p-3 text-center w-[50px]">순서</th>
+                  <th class="p-3 pl-5">현재 학년</th>
+                  <th class="p-3 text-center w-[30px]"></th>
+                  <th class="p-3">진급 후</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-toss-grey-50">
+                {#each Object.entries(promotionMapping) as [curr, next], i}
+                  <tr class="hover:bg-toss-grey-50/50 transition-all">
+                    <td class="p-3 text-center">
+                      <span
+                        class="w-5 h-5 inline-flex items-center justify-center rounded-lg bg-toss-grey-100 text-[10px] font-black text-toss-grey-500"
+                        >{i + 1}</span
+                      >
+                    </td>
+                    <td
+                      class="p-3 pl-5 text-[13px] font-black text-toss-grey-700"
+                      >{curr}</td
+                    >
+                    <td class="text-center"
+                      ><ChevronRight
+                        size={12}
+                        class="text-toss-grey-200 inline"
+                      /></td
+                    >
+                    <td
+                      class="p-3 text-[13px] font-black {next === '졸업/퇴원'
+                        ? 'text-red-500'
+                        : 'text-toss-blue'}">{next}</td
+                    >
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="flex justify-end pt-2">
+            <button
+              onclick={() => (promotionStep = "preview")}
+              class="toss-btn-primary px-10 h-16 rounded-[24px] font-black text-[16px] flex items-center gap-3 shadow-lg shadow-toss-blue/20"
+            >
+              상세 원생 배정 단계로 이동 <ChevronRight size={18} />
+            </button>
+          </div>
         </div>
       </section>
     {:else}
-      <!-- Preview & Assign Section -->
-      <section class="space-y-10" in:fade>
-        <div
-          class="flex justify-between items-center bg-white p-8 rounded-[40px] border border-toss-grey-100 shadow-sm"
-        >
-          <div class="space-y-2">
-            <h4 class="text-[20px] font-black text-toss-grey-800">
-              진급 대상 원생 검토 ({promotionWorkspace.length}명)
-            </h4>
-            <p class="text-[14px] font-bold text-toss-grey-500">
-              각 학생이 이동할 새로운 반을 선택하세요. 수강료가 자동 연동됩니다.
-            </p>
+      <!-- Preview & Assign Section: Tab Based (No separate header card to pull higher) -->
+      <section class="space-y-4" in:fade>
+        <div class="flex justify-between items-center">
+          <!-- Grade Tabs (More compact) -->
+          <div
+            class="flex flex-wrap gap-1.5 p-1 bg-toss-grey-50 rounded-[18px] border border-toss-grey-100 shadow-inner"
+          >
+            {#each settings.data.academy.gradeSystem as grade}
+              {@const count = promotionWorkspace.filter(
+                (s) => s.currentGrade === grade,
+              ).length}
+              {#if count > 0}
+                <button
+                  onclick={() => (activePreviewGrade = grade)}
+                  class="px-3 py-1.5 rounded-xl text-[12px] font-black transition-all flex items-center gap-1.5 {activePreviewGrade ===
+                  grade
+                    ? 'bg-white shadow-sm text-toss-blue'
+                    : 'text-toss-grey-400 hover:text-toss-grey-600'}"
+                >
+                  {grade} <span class="text-[10px] opacity-40">{count}</span>
+                </button>
+              {/if}
+            {/each}
           </div>
-          <div class="flex gap-4">
-            <button
-              onclick={() => (promotionStep = "config")}
-              class="px-6 h-14 bg-toss-grey-100 rounded-2xl font-black text-toss-grey-600 hover:bg-toss-grey-200 transition-all"
-              >설정으로 돌아가기</button
-            >
-          </div>
+          <p class="text-[12px] font-bold text-toss-grey-400 italic">
+            * 기존 반이 기본 유지됩니다. 조정이 필요한 학생만 변경하세요.
+          </p>
         </div>
 
-        <div class="space-y-6">
-          {#each settings.data.academy.gradeSystem as grade}
-            {@const gradeStudents = promotionWorkspace.filter(
-              (s) => s.currentGrade === grade,
-            )}
-            {#if gradeStudents.length > 0}
-              <div class="space-y-4">
-                <h5
-                  class="text-[16px] font-black text-toss-blue pl-4 border-l-4 border-toss-blue"
-                >
-                  {grade} 대상자
-                  <span class="text-toss-grey-400 font-bold ml-2"
-                    >({gradeStudents.length}명)</span
+        <div class="h-[calc(100vh-320px)] overflow-y-auto custom-scroll pr-2">
+          {#each Object.entries(groupedPromotionWorkspace) as [grade, gradeStudents]}
+            {#if grade === activePreviewGrade}
+              <div
+                class="bg-white border border-toss-grey-100 rounded-[28px] overflow-hidden shadow-sm"
+              >
+                <table class="w-full text-left border-collapse">
+                  <thead
+                    class="bg-toss-grey-25 border-b border-toss-grey-50 sticky top-0 z-10"
                   >
-                </h5>
-                <div
-                  class="bg-white border border-toss-grey-100 rounded-[32px] overflow-hidden shadow-sm"
-                >
-                  <table class="w-full text-left">
-                    <thead class="bg-toss-grey-25 border-b border-toss-grey-50">
+                    <tr
+                      class="text-[10px] font-black text-toss-grey-400 uppercase tracking-widest"
+                    >
+                      <th class="w-[50px] p-3 text-center">선택</th>
+                      <th class="p-3 pl-5">이름</th>
+                      <th class="p-3 w-[80px]">학년</th>
+                      <th class="p-3 w-[150px]">기존 수강 정보</th>
+                      <th class="p-3 w-[250px]">진급 후 배정 반 (이동)</th>
+                      <th class="p-3 text-right pr-6">예상 수강료 (변동)</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-toss-grey-50">
+                    {#each gradeStudents as s (s.id)}
+                      {@const totalOriginalFee = s.assignments.reduce(
+                        (sum, a) => sum + a.originalFee,
+                        0,
+                      )}
+                      {@const totalNewFee = s.assignments.reduce(
+                        (sum, a) => sum + a.fee,
+                        0,
+                      )}
+                      {@const totalPriceDiff = totalNewFee - totalOriginalFee}
                       <tr
-                        class="text-[11px] font-black text-toss-grey-400 uppercase tracking-widest"
+                        class="hover:bg-toss-grey-50/50 transition-all {s.nextGrade ===
+                        '졸업/퇴원'
+                          ? 'opacity-60 bg-red-50/10'
+                          : ''}"
                       >
-                        <th class="w-[60px] p-5 text-center">선택</th>
-                        <th class="p-5 pl-8">이름</th>
-                        <th class="p-5 w-[140px]">기존 학년</th>
-                        <th class="p-5 w-[140px]">진급 학년</th>
-                        <th class="p-5">배정 될 반 (이동)</th>
-                        <th class="p-5 text-right pr-10">예상 수강료</th>
-                      </tr>
-                    </thead>
-                    <tbody class="divide-y divide-toss-grey-50">
-                      {#each gradeStudents as s (s.id)}
-                        <tr
-                          class="hover:bg-toss-grey-50/50 transition-all {s.nextGrade ===
-                          '졸업/퇴원'
-                            ? 'opacity-60 bg-red-50/10'
-                            : ''}"
+                        <td class="p-3 text-center align-top pt-5">
+                          <input
+                            type="checkbox"
+                            bind:checked={s.isSelected}
+                            class="w-4 h-4 rounded-md border-toss-grey-200 text-toss-blue focus:ring-toss-blue/20"
+                          />
+                        </td>
+                        <td
+                          class="p-3 pl-5 font-black text-[13px] text-toss-grey-700 align-top pt-5"
                         >
-                          <td class="p-5 text-center">
-                            <input
-                              type="checkbox"
-                              bind:checked={s.isSelected}
-                              class="w-5 h-5 rounded-md border-toss-grey-200 text-toss-blue focus:ring-toss-blue/20"
-                            />
-                          </td>
-                          <td class="p-5 pl-8 font-black text-toss-grey-700"
-                            >{s.name}</td
-                          >
-                          <td
-                            class="p-5 text-[14px] font-bold text-toss-grey-400"
-                            >{s.currentGrade}</td
-                          >
-                          <td
-                            class="p-5 text-[14px] font-black {s.nextGrade ===
-                            '졸업/퇴원'
-                              ? 'text-red-500'
-                              : 'text-toss-blue'}"
-                          >
-                            {s.nextGrade}
-                          </td>
-                          <td class="p-5">
-                            {#if s.nextGrade !== "졸업/퇴원"}
-                              <select
-                                onchange={(e) =>
-                                  handleClassChange(
-                                    s.id,
-                                    (e.target as HTMLSelectElement).value,
-                                  )}
-                                class="w-full h-12 px-4 rounded-xl bg-toss-grey-50 border border-toss-grey-100 text-[13px] font-black text-toss-grey-600 focus:bg-white focus:border-toss-blue outline-none transition-all cursor-pointer"
-                              >
-                                <option value="">반을 선택하세요..</option>
-                                {#each settings.data.classes as cls}
-                                  <option value={cls.id}
-                                    >{cls.name} (定 {cls.fee.toLocaleString()}원)</option
+                          {s.name}
+                          <div class="text-[10px] text-toss-grey-400 font-bold">
+                            {s.currentGrade} → {s.nextGrade}
+                          </div>
+                        </td>
+                        <td
+                          class="p-3 text-[12px] font-bold text-toss-grey-400 align-top pt-5"
+                          >{s.nextGrade}</td
+                        >
+                        <td
+                          class="p-3 align-top pt-5 border-l border-toss-grey-50"
+                        >
+                          <div class="space-y-4">
+                            {#each s.assignments as assign}
+                              <div class="h-10 flex flex-col justify-center">
+                                <div
+                                  class="text-[11px] font-bold text-toss-grey-600 truncate max-w-[140px]"
+                                  title={assign.currentClassName}
+                                >
+                                  {assign.currentClassName}
+                                </div>
+                                {#if assign.originalFee > 0}
+                                  <div
+                                    class="text-[10px] text-toss-grey-400 font-medium"
                                   >
-                                {/each}
-                              </select>
+                                    ₩{assign.originalFee.toLocaleString()}
+                                  </div>
+                                {/if}
+                              </div>
+                            {/each}
+                          </div>
+                        </td>
+                        <td
+                          class="p-3 align-top pt-5 border-l border-toss-grey-50"
+                        >
+                          <div class="space-y-4">
+                            {#if s.nextGrade !== "졸업/퇴원"}
+                              {#each s.assignments as assign, idx}
+                                <div class="flex items-center gap-2">
+                                  <select
+                                    onchange={(e) =>
+                                      handleClassChange(
+                                        s.id,
+                                        idx,
+                                        (e.target as HTMLSelectElement).value,
+                                      )}
+                                    bind:value={assign.targetClassId}
+                                    class="w-full h-10 px-3 rounded-lg bg-toss-grey-50 border border-toss-grey-100 text-[11px] font-black text-toss-grey-600 focus:bg-white focus:border-toss-blue outline-none transition-all cursor-pointer"
+                                  >
+                                    <option value="">취소 (배정 제외)</option>
+                                    {#each settings.data.classes as cls}
+                                      <option value={cls.id}
+                                        >{cls.name} (₩{cls.fee.toLocaleString()})</option
+                                      >
+                                    {/each}
+                                  </select>
+                                  {#if settings.data.classes.find((c) => c.id === assign.targetClassId)?.name !== assign.currentClassName}
+                                    <span
+                                      class="bg-orange-50 text-orange-500 text-[8px] font-black px-1.5 py-0.5 rounded-md border border-orange-100 whitespace-nowrap uppercase"
+                                      >Moved</span
+                                    >
+                                  {/if}
+                                </div>
+                              {/each}
                             {:else}
-                              <span class="text-[12px] font-bold text-red-400"
+                              <span
+                                class="text-[10px] font-bold text-red-400 pt-3 block"
                                 >자동 졸업 (반 배정 제외)</span
                               >
                             {/if}
-                          </td>
-                          <td
-                            class="p-5 text-right pr-10 font-black text-toss-grey-700"
+                          </div>
+                        </td>
+                        <td
+                          class="p-3 text-right pr-6 font-black text-[13px] text-toss-grey-700 align-top pt-5"
+                        >
+                          <div
+                            class={totalPriceDiff !== 0 ? "text-toss-blue" : ""}
                           >
-                            {s.fee > 0 ? `₩${s.fee.toLocaleString()}` : "-"}
-                          </td>
-                        </tr>
-                      {/each}
-                    </tbody>
-                  </table>
-                </div>
+                            {totalNewFee > 0
+                              ? `₩${totalNewFee.toLocaleString()}`
+                              : "-"}
+                          </div>
+                          {#if totalPriceDiff !== 0}
+                            <div
+                              class="text-[10px] font-black {totalPriceDiff > 0
+                                ? 'text-red-400'
+                                : 'text-toss-blue'}"
+                            >
+                              ({totalPriceDiff > 0
+                                ? "+"
+                                : ""}{totalPriceDiff.toLocaleString()})
+                            </div>
+                          {/if}
+                        </td>
+                      </tr>
+                    {/each}
+                  </tbody>
+                </table>
               </div>
             {/if}
           {/each}
@@ -1798,14 +1761,14 @@
 
         <div class="fixed bottom-10 right-10 flex gap-4">
           <button
-            class="px-10 h-20 bg-white border border-toss-grey-200 rounded-[32px] font-black text-[18px] text-toss-grey-500 shadow-xl hover:bg-toss-grey-50 transition-all"
+            class="px-8 h-16 bg-white border border-toss-grey-200 rounded-[24px] font-black text-[16px] text-toss-grey-500 shadow-xl hover:bg-toss-grey-50 transition-all"
             onclick={() => (isPromotionModalOpen = false)}>취소</button
           >
           <button
             onclick={applySmartPromotion}
-            class="px-16 h-20 bg-toss-blue text-white rounded-[32px] font-black text-[20px] shadow-2xl shadow-toss-blue/30 hover:scale-[1.05] transition-all flex items-center gap-4 animate-bounce-subtle"
+            class="px-12 h-16 bg-toss-blue text-white rounded-[24px] font-black text-[18px] shadow-2xl shadow-toss-blue/30 hover:scale-[1.05] transition-all flex items-center gap-4 animate-bounce-subtle"
           >
-            <TrendingUp size={24} strokeWidth={3} />
+            <TrendingUp size={22} strokeWidth={3} />
             {promotionWorkspace.filter((s) => s.isSelected).length}명 진급 확정
             및 수강료 청구
           </button>
